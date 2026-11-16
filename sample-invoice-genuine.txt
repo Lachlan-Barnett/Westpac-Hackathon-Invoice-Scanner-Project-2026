@@ -1,0 +1,37 @@
+From: Bright Spark Electrical <accounts@brightspark.com.au>
+To: alex.chen@email.com
+Subject: Your invoice from Bright Spark Electrical
+
+Hi Alex,
+
+Thanks for having us out to fix the switchboard. Your invoice is below.
+Payment is due within 14 days. Give us a call if you have any questions.
+
+Kind regards,
+Mia Turner
+Accounts, Bright Spark Electrical
+
+TAX INVOICE
+Bright Spark Electrical
+ABN 62 301 987 403
+14 Harbour Street, Wollongong NSW 2500
+Phone: (02) 4200 1188
+Invoice No: BSE-2231
+Date: 15 Nov 2026
+Due date: 29 Nov 2026
+
+Bill to: Alex Chen, 8 Ocean Parade, Wollongong NSW 2500
+
+Switchboard repair (2.5 hours)        $475.00
+Replacement circuit breakers x3       $360.00
+Call-out fee                          $115.00
+Amount before GST                     $950.00
+GST (10%)                              $95.00
+
+Total due: $1,045.00
+
+Pay by bank transfer
+Account name: Bright Spark Electrical
+BSB: 063-010
+Account No: 44332211
+Reference: BSE-2231

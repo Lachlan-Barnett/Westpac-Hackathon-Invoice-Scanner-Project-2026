@@ -1,0 +1,1471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Westpac Scam Protect Demo</title>
+<style>
+  :root {
+    /* Westpac palette: hero red, heading navy, text, neutral grey, border, background */
+    --red: #da1710; --red-dark: #b0120c; --red-soft: #fdebea; --ink: #1f1c4f;
+    --bg: #e7e7ec; --app: #f3f4f6; --card: #fff; --text: #2b2b2b; --muted: #575f65; --line: #dedee1;
+    --ok: #008a02; --ok-bg: #e6f4e6; --warn: #c53b00; --warn-bg: #fdf0e9; --bad: #c80038; --bad-bg: #fbe6ec;
+  }
+  * { box-sizing: border-box; }
+  html, body { scrollbar-width: none; }
+  body::-webkit-scrollbar { display: none; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  .wrap { display: flex; justify-content: center; padding: 24px 16px; }
+  button { font: inherit; color: inherit; }
+
+  /* ---------- Phone ---------- */
+  .phone { width: 390px; max-width: 100%; height: 820px; max-height: calc(100vh - 48px); min-height: 640px; background: var(--app); border-radius: 44px; border: 11px solid #111; overflow: hidden; display: flex; flex-direction: column; position: relative; box-shadow: 0 24px 60px rgba(0,0,0,.28); }
+  @media (max-width: 500px) { .phone { border: 0; border-radius: 0; height: 100vh; max-height: none; min-height: 0; } .wrap { padding: 0; } }
+  .statusbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 24px 4px; font-size: .8rem; font-weight: 600; background: #fff; flex-shrink: 0; }
+  .statusbar svg { height: 12px; fill: currentColor; margin-left: 4px; }
+  .statusbar.red, .topbar.red { background: var(--red); color: #fff; }
+  .topbar { background: #fff; padding: 8px 14px 10px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; min-height: 52px; border-bottom: 1px solid var(--line); }
+  .topbar.red { border-bottom-color: var(--red); }
+  .topbar .left, .topbar .right { width: 96px; display: flex; align-items: center; }
+  .topbar .right { justify-content: flex-end; gap: 6px; }
+  .topbar h1 { flex: 1; text-align: center; font-size: 1.02rem; margin: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .back { background: none; border: 0; color: var(--red); font-size: 1.9rem; line-height: 1; cursor: pointer; padding: 0 6px 2px 0; }
+  .brand { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 1.05rem; letter-spacing: -.01em; }
+  .wmark { width: 26px; height: 26px; border-radius: 6px; background: #fff; color: var(--red); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: .95rem; font-family: Georgia, serif; font-style: italic; }
+  .icon-btn { background: none; border: 0; cursor: pointer; padding: 4px; display: flex; color: inherit; }
+  .icon-btn svg, .ic svg, .ri-ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .content { flex: 1; overflow-y: auto; padding: 16px; scrollbar-width: none; }
+  .content::-webkit-scrollbar { display: none; }
+
+  .nav { display: flex; background: #fff; border-top: 1px solid var(--line); flex-shrink: 0; padding-bottom: 6px; }
+  .nav button { flex: 1; background: none; border: 0; padding: 8px 0 6px; font-size: .68rem; color: var(--muted); cursor: pointer; }
+  .nav .ic { display: block; width: 24px; height: 24px; margin: 0 auto 2px; }
+  .nav button.on { color: var(--red); font-weight: 700; }
+  .nav .scan .ic { width: 44px; height: 44px; margin: -18px auto 2px; border-radius: 50%; background: var(--red); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(218,23,16,.35); }
+  .nav .scan .ic svg { width: 22px; height: 22px; }
+
+  .screen { display: none; }
+  .screen.on { display: block; }
+  .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+  .section-title { font-size: .76rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 20px 4px 8px; font-weight: 700; }
+  .muted { color: var(--muted); }
+  .small { font-size: .8rem; }
+
+  /* Home */
+  .hero { background: var(--red); color: #fff; margin: -16px -16px 0; padding: 14px 18px 58px; }
+  .hero .hello { font-size: 1.15rem; font-weight: 700; }
+  .hero .total { font-size: 1.9rem; font-weight: 800; margin-top: 10px; }
+  .hero .total-l { font-size: .76rem; opacity: .85; }
+  .hero-cards { margin-top: -42px; }
+  .acct { cursor: pointer; position: relative; }
+  .acct::after { content: '›'; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--red); font-size: 1.6rem; }
+  .acct .name { font-weight: 700; }
+  .acct .num { color: var(--muted); font-size: .78rem; margin-top: 2px; }
+  .acct .bal { font-size: 1.45rem; font-weight: 800; margin-top: 8px; }
+  .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 6px 0 10px; }
+  .quick button { background: none; border: 0; cursor: pointer; font-size: .72rem; padding: 4px 0; }
+  .quick .ic { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; margin: 0 auto 6px; border-radius: 50%; background: var(--red-soft); color: var(--red); }
+  .quick button:hover .ic { background: var(--red); color: #fff; }
+  .protect { display: flex; gap: 12px; align-items: center; background: #fff; border-left: 4px solid var(--red); border-radius: 10px; padding: 12px; font-size: .82rem; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.06); cursor: pointer; }
+  .protect b { color: var(--red); }
+  .protect .ri-ic { color: var(--red); }
+  .plan-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+
+  /* Lists */
+  .tx { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: .9rem; gap: 10px; }
+  .tx:last-child { border-bottom: 0; }
+  .tx .d { color: var(--muted); font-size: .76rem; margin-top: 2px; }
+  .tx .amt { font-weight: 700; white-space: nowrap; }
+  .tx .amt.in { color: var(--ok); }
+  .rep-link { color: var(--red); cursor: pointer; text-decoration: underline; }
+  .row-item { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .row-item:last-child { border-bottom: 0; }
+  .row-item .info { flex: 1; min-width: 0; }
+  .row-item .info b { display: block; font-size: .92rem; }
+  .row-item .info span { color: var(--muted); font-size: .78rem; }
+  .ri-ic { width: 40px; height: 40px; border-radius: 50%; background: var(--red-soft); color: var(--red); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; font-size: .85rem; }
+  .chev { color: var(--red); font-size: 1.5rem; line-height: 1; }
+  .tag { display: inline-block; background: var(--red); color: #fff; font-size: .62rem; font-weight: 700; padding: 2px 6px; border-radius: 6px; margin-left: 6px; vertical-align: middle; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* Forms */
+  .tabs { display: flex; background: #e4e4ea; border-radius: 10px; padding: 3px; margin: 14px 0 4px; }
+  .tabs button { flex: 1; border: 0; background: none; padding: 8px; border-radius: 8px; font-size: .85rem; cursor: pointer; }
+  .tabs button.on { background: #fff; font-weight: 700; color: var(--red); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  label { display: block; font-size: .76rem; color: var(--muted); margin: 12px 0 4px; font-weight: 600; }
+  input, select, textarea { width: 100%; padding: 11px; border: 1px solid #d4d4dc; border-radius: 10px; font: inherit; background: #fff; color: var(--text); }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--red); border-color: transparent; }
+  .two { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+  .amount-input { font-size: 1.5rem; font-weight: 800; }
+  .check-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: .85rem; color: var(--text); font-weight: 400; }
+  .check-row input { width: auto; }
+  .err { color: var(--bad); font-size: .8rem; margin-top: 8px; min-height: 1em; }
+  .btn { display: block; width: 100%; margin-top: 14px; padding: 14px; border: 0; border-radius: 26px; background: var(--red); color: #fff; font-weight: 700; cursor: pointer; }
+  .btn:hover { background: var(--red-dark); }
+  .btn:disabled { opacity: .6; cursor: default; }
+  .btn.ghost { background: #fff; color: var(--red); border: 1.5px solid var(--red); }
+  .btn.ghost:hover { background: var(--red-soft); }
+  .btn.sm { padding: 10px; font-size: .85rem; margin-top: 10px; }
+
+  .review-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: .9rem; gap: 12px; }
+  .review-row:last-child { border-bottom: 0; }
+  .review-row span:first-child { color: var(--muted); }
+  .review-row span:last-child { text-align: right; font-weight: 600; }
+  .big-amt { text-align: center; font-size: 2.2rem; font-weight: 800; margin: 6px 0 2px; }
+
+  .note { padding: 11px 12px; border-radius: 10px; font-size: .84rem; margin-top: 10px; line-height: 1.42; }
+  .note.ok { background: var(--ok-bg); color: var(--ok); }
+  .note.warn { background: var(--warn-bg); color: var(--warn); }
+  .note.bad { background: var(--bad-bg); color: var(--bad); }
+  .note.info { background: #eef0f6; color: var(--ink); }
+  .note ul { margin: 6px 0 0; padding-left: 18px; }
+
+  .receipt { text-align: center; padding-top: 16px; }
+  .tick { width: 72px; height: 72px; border-radius: 50%; background: var(--ok); color: #fff; font-size: 2.3rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+
+  /* Sheet */
+  .overlay { position: absolute; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: flex-end; z-index: 10; }
+  .overlay.show { display: flex; }
+  .sheet { background: #fff; width: 100%; border-radius: 22px 22px 0 0; padding: 20px; max-height: 92%; overflow-y: auto; scrollbar-width: none; }
+  .sheet h3 { margin: 0 0 6px; }
+  .meter { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin: 12px 0 4px; }
+  .meter span { display: block; height: 100%; transition: width .4s; }
+  .q { margin: 14px 0; font-size: .9rem; }
+  .q div { display: flex; gap: 8px; margin-top: 6px; }
+  .q button { flex: 1; padding: 9px; border: 0; border-radius: 8px; background: #e4e4ea; cursor: pointer; }
+  .q button.sel { background: var(--red); color: #fff; }
+
+  .toast { position: absolute; bottom: 86px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 9px 14px; border-radius: 20px; font-size: .8rem; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; width: max-content; max-width: 86%; text-align: center; }
+  .toast.show { opacity: 1; }
+
+  /* Big payment plan */
+  .timer-pill { display: inline-flex; align-items: center; gap: 4px; border: 1px solid currentColor; border-radius: 12px; padding: 2px 7px; font-size: .68rem; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; }
+  .topbar:not(.red) .timer-pill { color: var(--red); }
+  .timer-pill.ready { color: var(--ok) !important; background: #fff; }
+  .timer-pill svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+
+  /* Invoice scanner */
+  .drop { border: 2px dashed #cfcfd6; border-radius: 12px; padding: 22px 12px; text-align: center; cursor: pointer; margin-top: 12px; transition: background .15s, border-color .15s; }
+  .drop:hover, .drop.over { border-color: var(--red); background: var(--red-soft); }
+  .drop svg { width: 34px; height: 34px; fill: none; stroke: var(--red); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .topbar:not(.red) h1, .row-item .info b, .acct .name, .card > b, .section-title, h2 { color: var(--ink); }
+
+  /* Invoice scanner: start screen */
+  .inv-hero { background: #fff; border-radius: 14px; padding: 20px 18px 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+  .inv-hero-ic { width: 56px; height: 56px; border-radius: 50%; background: var(--red-soft); color: var(--red); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+  .inv-hero-ic svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .inv-hero h2 { font-size: 1.15rem; margin: 0 0 6px; }
+  .inv-hero p { color: var(--muted); font-size: .85rem; line-height: 1.45; margin: 0; }
+  .steps { display: flex; justify-content: space-between; list-style: none; padding: 0; margin: 16px 0 0; gap: 6px; }
+  .steps li { flex: 1; font-size: .72rem; color: var(--ink); font-weight: 600; }
+  .steps li b { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--red); color: #fff; margin: 0 auto 4px; font-size: .78rem; }
+  .add-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+  .add-tile { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 14px 6px 12px; cursor: pointer; text-align: center; color: var(--ink); font-weight: 700; font-size: .8rem; transition: border-color .15s, background .15s; }
+  .add-tile:hover { border-color: var(--red); }
+  .add-tile svg { width: 26px; height: 26px; fill: none; stroke: var(--red); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; margin: 0 auto 6px; }
+  .add-tile small { display: block; font-weight: 400; color: var(--muted); font-size: .68rem; margin-top: 2px; }
+  .add-tile.sel { background: var(--red); border-color: var(--red); color: #fff; }
+  .add-tile.sel svg { stroke: #fff; }
+  .add-tile.sel small { color: rgba(255,255,255,.85); }
+  .add-tile.sel:hover { background: var(--red-dark); }
+  .server-down { position: absolute; inset: 0; background: var(--app); z-index: 30; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px; }
+  .server-down h2 { margin: 12px 0 6px; font-size: 1.15rem; }
+  .server-down p { color: var(--muted); font-size: .88rem; line-height: 1.5; margin: 4px 0; }
+  .server-down code { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; color: var(--ink); }
+  /* Mock camera app (opens inside the phone) */
+  .camera { position: absolute; inset: 0; background: #000; z-index: 25; display: none; flex-direction: column; color: #fff; }
+  .camera.open { display: flex; }
+  .cam-top { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px 12px; font-size: .72rem; letter-spacing: .18em; color: #ffd60a; font-weight: 700; }
+  .cam-top span:last-child { width: 28px; }
+  .cam-x { background: none; border: 0; color: #fff; font-size: 1.3rem; cursor: pointer; width: 28px; padding: 0; }
+  .cam-view { flex: 1; position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 35%, #9a7652 0%, #6b4c31 55%, #3e2a1a 100%); }
+  .cam-scene { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; animation: camSway 4.5s ease-in-out infinite; }
+  .cam-view.frozen .cam-scene { animation-play-state: paused; }
+  .cam-paper { width: 72%; transform: rotate(-4deg); box-shadow: 0 14px 32px rgba(0,0,0,.55); border-radius: 2px; }
+  @keyframes camSway { 0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); } 50% { transform: translate(5px, -4px) rotate(.7deg) scale(1.01); } }
+  .cam-frame { position: absolute; inset: 7% 7%; pointer-events: none; }
+  .cam-frame i { position: absolute; width: 30px; height: 30px; border: 3px solid #ffd60a; }
+  .cam-frame i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .cam-frame i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+  .cam-frame i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+  .cam-frame i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+  .cam-hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 14px; font-size: .74rem; white-space: nowrap; }
+  .cam-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 2; }
+  .cam-flash.go { animation: camFlash .4s ease-out; }
+  @keyframes camFlash { 0% { opacity: .95; } 100% { opacity: 0; } }
+  .cam-bottom { height: 124px; display: flex; align-items: center; justify-content: space-between; padding: 0 30px 12px; background: #000; flex-shrink: 0; }
+  .shutter { width: 72px; height: 72px; border-radius: 50%; background: #fff; border: 5px solid #000; box-shadow: 0 0 0 3px #fff; cursor: pointer; transition: transform .1s; }
+  .shutter:active { transform: scale(.9); }
+  .cam-side { width: 44px; height: 44px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; }
+  .cam-side svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .cam-txt { background: none; border: 0; color: #fff; font-size: 1rem; cursor: pointer; padding: 10px 4px; }
+  .cam-txt.use { color: #ffd60a; font-weight: 700; }
+  .tip { color: var(--muted); font-size: .74rem; text-align: center; margin: 10px 0 0; }
+
+  /* Invoice scanner: results */
+  .verdict { display: flex; gap: 12px; align-items: flex-start; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .verdict .v-ic { width: 36px; height: 36px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem; flex-shrink: 0; }
+  .verdict b { display: block; font-size: 1rem; margin-bottom: 2px; }
+  .verdict div div { font-size: .82rem; line-height: 1.4; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); } .verdict.ok .v-ic { background: var(--ok); }
+  .verdict.warn { background: var(--warn-bg); color: var(--warn); } .verdict.warn .v-ic { background: var(--warn); }
+  .verdict.bad { background: var(--bad-bg); color: var(--bad); } .verdict.bad .v-ic { background: var(--bad); }
+  .verdict.info { background: #eceef4; color: var(--ink); } .verdict.info .v-ic { background: var(--ink); }
+  .chk-head { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted); padding: 12px 0 2px; }
+  .chk-head:first-child { padding-top: 2px; }
+  .inv-head { display: flex; gap: 12px; align-items: center; }
+  .inv-thumb { width: 54px; height: 70px; border-radius: 6px; border: 1px solid var(--line); object-fit: cover; object-position: top; background: #fafafa; display: flex; align-items: center; justify-content: center; font-size: .66rem; font-weight: 800; color: var(--red); flex-shrink: 0; }
+  .chk { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: .84rem; line-height: 1.38; }
+  .chk:last-child { border-bottom: 0; }
+  .dot { width: 20px; height: 20px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+  .spinner { width: 36px; height: 36px; border: 4px solid var(--red-soft); border-top-color: var(--red); border-radius: 50%; animation: spin 1s linear infinite; margin: 10px auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Cards */
+  .bank-card { border-radius: 16px; padding: 20px; color: #fff; background: linear-gradient(135deg, #da1710, #8f0d08); height: 200px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 8px 20px rgba(143,13,8,.35); transition: filter .2s; }
+  .bank-card.locked { filter: grayscale(1) brightness(.85); }
+  .bank-card .num { font-size: 1.15rem; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
+  .toggle { width: 46px; height: 28px; border-radius: 14px; background: #ccc; position: relative; border: 0; cursor: pointer; flex-shrink: 0; transition: background .2s; }
+  .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .toggle.on { background: var(--red); }
+  .toggle.on::after { left: 21px; }
+
+  /* Scanned invoices */
+  .scan-dot { width: 30px; height: 30px; font-size: .8rem; margin-top: 0; }
+  .status { display: inline-block; font-size: .66rem; font-weight: 700; padding: 2px 7px; border-radius: 8px; margin-top: 4px; background: #eef0f6; color: var(--ink); }
+  .status.paid { background: var(--ok-bg); color: var(--ok); }
+  .status.notpaid { background: #eee; color: var(--muted); }
+  .scan-tools { display: flex; gap: 8px; align-items: center; margin: 0 0 4px; }
+  .scan-tools select { width: auto; flex: 1; padding: 9px 10px; font-size: .85rem; }
+  .scan-tools .btn { width: auto; margin: 0; padding: 9px 16px; }
+  .month-count { float: right; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 600; font-size: .76rem; }
+  .pick { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #c4c4cc; display: flex; align-items: center; justify-content: center; color: transparent; font-size: .75rem; font-weight: 800; flex-shrink: 0; }
+  .pick.on { background: var(--red); border-color: var(--red); color: #fff; }
+  .select-bar { position: sticky; bottom: -16px; background: var(--app); padding: 10px 0 16px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; }
+  .select-bar .btn { margin: 0; }
+  .see-all { float: right; color: var(--red); cursor: pointer; text-transform: none; letter-spacing: 0; font-size: .8rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="phone">
+
+  <div class="statusbar red" id="statusbar">
+    <span id="clock">9:41</span>
+    <span><svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg viewBox="0 0 26 12"><rect x="0" y="0" width="22" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="2" width="15" height="8" rx="1.5"/><rect x="23" y="4" width="2" height="4" rx="1"/></svg></span>
+  </div>
+
+  <header class="topbar red" id="topbar">
+    <div class="left">
+      <button class="back" id="backBtn" onclick="goBack()" style="display:none" aria-label="Back">‹</button>
+      <div class="brand" id="brand"><span class="wmark">W</span>Westpac</div>
+    </div>
+    <h1 id="title"></h1>
+    <div class="right">
+      <span id="timerSlot"></span>
+      <button class="icon-btn" onclick="toast('No new notifications')" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></button>
+    </div>
+  </header>
+
+  <main class="content" id="content">
+
+    <!-- HOME -->
+    <section class="screen on" id="s-home">
+      <div class="hero">
+        <div class="hello" id="hello">Good morning, Alex</div>
+        <div class="total" id="totalBal"></div>
+        <div class="total-l">Total available</div>
+      </div>
+      <div class="hero-cards" id="acctList"></div>
+      <div class="quick">
+        <button onclick="startPay()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6"/></svg></span>Pay</button>
+        <button onclick="go('transfer')"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg></span>Transfer</button>
+        <button onclick="openInvoice()"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h5"/></svg></span>Scan invoice</button>
+        <button onclick="startBpay()"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span>BPAY</button>
+      </div>
+      <div class="protect" onclick="go('more')">
+        <span class="ri-ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span>
+        <div><b>Scam Protect is on.</b> We check every payment for scam signs and tell you what we find. You always decide.</div>
+      </div>
+      <div class="card plan-card" onclick="go('bigplan')">
+        <div><b>Planning a big payment?</b><div class="muted small" style="margin-top:2px" id="planCardSub">Buying a car or paying a builder? Let us know first.</div></div>
+        <span class="chev">›</span>
+      </div>
+      <div class="section-title">Recent activity</div>
+      <div class="card" id="recentTx"></div>
+    </section>
+
+    <!-- ACCOUNT -->
+    <section class="screen" id="s-account">
+      <div class="card">
+        <div class="muted small" id="adType"></div>
+        <div style="font-weight:700;font-size:1.05rem" id="adName"></div>
+        <div class="big-amt" style="text-align:left" id="adBal"></div>
+        <div class="muted small">Available balance</div>
+        <div style="display:flex;gap:28px;margin-top:14px">
+          <div><div class="muted small">BSB</div><div style="font-weight:700" id="adBsb"></div></div>
+          <div><div class="muted small">Account number</div><div style="font-weight:700" id="adAcc"></div></div>
+        </div>
+        <button class="btn ghost sm" onclick="copyDetails()">Copy account details</button>
+      </div>
+      <div class="section-title">Transactions</div>
+      <div class="card" id="adTx"></div>
+    </section>
+
+    <!-- PAY HUB -->
+    <section class="screen" id="s-pay">
+      <div class="card" style="padding:4px 16px">
+        <div class="row-item" onclick="startPay()"><span class="ri-ic"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 6l6 6-6 6"/></svg></span><div class="info"><b>Pay someone</b><span>BSB and account, or PayID</span></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="openInvoice()"><span class="ri-ic"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h5"/></svg></span><div class="info"><b>Scan an invoice <span class="tag">New</span></b><span>Photo, PDF or email. We check the business is real</span></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="startBpay()"><span class="ri-ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><div class="info"><b>Pay a bill</b><span>BPAY</span></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="go('transfer')"><span class="ri-ic"><svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg></span><div class="info"><b>Transfer between accounts</b><span>Move money between your own accounts</span></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="go('bigplan')"><span class="ri-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg></span><div class="info"><b>Plan a big payment <span class="tag">New</span></b><span>Car, builder, house deposit, new supplier</span></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="go('payees')"><span class="ri-ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></svg></span><div class="info"><b>Payees and billers</b><span>People and businesses you've paid</span></div><span class="chev">›</span></div>
+      </div>
+    </section>
+
+    <!-- PAY SOMEONE -->
+    <section class="screen" id="s-payform">
+      <div id="payInvoice"></div>
+      <label>From</label>
+      <select id="payFrom"></select>
+      <div class="tabs">
+        <button class="on" id="tabBsb" onclick="setMethod('bsb')">BSB &amp; account</button>
+        <button id="tabPayid" onclick="setMethod('payid')">PayID</button>
+      </div>
+      <div id="bsbFields">
+        <label>Choose a payee</label>
+        <select id="pPickBsb" onchange="pickPayee('bsb')"></select>
+        <label>Account name</label>
+        <input id="pName" placeholder="e.g. Sam Lee or Bright Spark Electrical" autocomplete="off">
+        <div class="two">
+          <div><label>BSB</label><input id="pBsb" placeholder="000-000" inputmode="numeric" maxlength="7" autocomplete="off"></div>
+          <div><label>Account number</label><input id="pAcc" placeholder="12345678" inputmode="numeric" maxlength="9" autocomplete="off"></div>
+        </div>
+      </div>
+      <div id="payidFields" style="display:none">
+        <label>Choose a payee</label>
+        <select id="pPickPayid" onchange="pickPayee('payid')"></select>
+        <label>PayID (mobile, email or ABN)</label>
+        <input id="pPayid" placeholder="0412 345 678 or name@email.com" autocomplete="off">
+      </div>
+      <div id="liveCheck"></div>
+      <label class="check-row"><input type="checkbox" id="pBiz"> I'm paying a business (tradie, shop, supplier)</label>
+      <label>Amount</label>
+      <input id="pAmt" class="amount-input" placeholder="$0.00" inputmode="decimal" autocomplete="off">
+      <label>Description (shown on their statement)</label>
+      <input id="pDesc" placeholder="e.g. Rent" maxlength="18" autocomplete="off">
+      <label class="check-row"><input type="checkbox" id="pSave"> Save as a payee</label>
+      <div class="err" id="payErr"></div>
+      <button class="btn" id="reviewBtn" onclick="review()">Review payment</button>
+    </section>
+
+    <!-- BPAY -->
+    <section class="screen" id="s-bpay">
+      <label>From</label>
+      <select id="bpayFrom"></select>
+      <label>Choose a biller</label>
+      <select id="bPick" onchange="pickBiller()"></select>
+      <div class="two">
+        <div><label>Biller code</label><input id="bCode" inputmode="numeric" maxlength="10" placeholder="12345" autocomplete="off"></div>
+        <div><label>Reference number</label><input id="bRef" inputmode="numeric" maxlength="20" placeholder="Customer reference" autocomplete="off"></div>
+      </div>
+      <div id="billerCheck"></div>
+      <label>Amount</label>
+      <input id="bAmt" class="amount-input" placeholder="$0.00" inputmode="decimal" autocomplete="off">
+      <div class="err" id="bpayErr"></div>
+      <button class="btn" id="bpayBtn" onclick="reviewBpay()">Review payment</button>
+    </section>
+
+    <!-- REVIEW -->
+    <section class="screen" id="s-review">
+      <div class="muted small" style="text-align:center">You're paying</div>
+      <div class="big-amt" id="rAmt"></div>
+      <div class="muted small" style="text-align:center" id="rTo"></div>
+      <div class="card" style="margin-top:14px" id="rDetails"></div>
+      <div id="rNotes"></div>
+      <button class="btn" onclick="confirmPay()">Confirm &amp; pay</button>
+      <button class="btn ghost" onclick="goBack()">Edit details</button>
+    </section>
+
+    <!-- TRANSFER -->
+    <section class="screen" id="s-transfer">
+      <label>From</label><select id="tFrom"></select>
+      <label>To</label><select id="tTo"></select>
+      <label>Amount</label>
+      <input id="tAmt" class="amount-input" placeholder="$0.00" inputmode="decimal" autocomplete="off">
+      <div class="err" id="tErr"></div>
+      <button class="btn" onclick="doTransfer()">Transfer now</button>
+    </section>
+
+    <!-- RECEIPT -->
+    <section class="screen" id="s-receipt">
+      <div class="receipt" id="receiptBody"></div>
+      <button class="btn" onclick="goHome()">Done</button>
+    </section>
+
+    <!-- INVOICE SCANNER -->
+    <section class="screen" id="s-invoice">
+      <div id="invInput">
+        <div class="inv-hero">
+          <div class="inv-hero-ic"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 14l2 2 4-4"/></svg></div>
+          <h2>Check an invoice before you pay</h2>
+          <p>We'll read it, fill in the payment for you, and check the business and bank details are real.</p>
+          <ol class="steps"><li><b>1</b>Add your invoice</li><li><b>2</b>We check it</li><li><b>3</b>You decide</li></ol>
+        </div>
+        <div class="add-grid">
+          <button class="add-tile sel" id="tileUpload" onclick="setInvMode('upload')"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Upload<small>Image or PDF</small></button>
+          <button class="add-tile" id="tileEmail" onclick="setInvMode('email')"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Email<small>Paste or share</small></button>
+          <button class="add-tile" id="tilePhoto" onclick="takePhoto()"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Photo<small>Opens your camera</small></button>
+        </div>
+        <div id="panelUpload">
+          <div class="drop" id="drop" onclick="chooseFile()">
+            <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+            <div style="font-weight:700;margin-top:6px;color:var(--ink)">Upload or drag an invoice here</div>
+            <div class="muted small" style="margin-top:2px">Images, PDFs and saved emails</div>
+          </div>
+          <p class="tip">Tip: you can also paste a screenshot with Ctrl+V.</p>
+        </div>
+        <div id="panelEmail" class="card" style="display:none;margin-top:12px">
+          <b>Paste the email</b>
+          <p class="muted small" style="line-height:1.4;margin:4px 0 0">In the app you can tap <b>Share</b> in your email app and choose <b>Westpac</b>. Here, paste the whole email, including the "From" line.</p>
+          <textarea id="invText" rows="6" placeholder="Paste the email or invoice text here" style="margin-top:8px"></textarea>
+          <button class="btn sm" onclick="invFromText()">Check this email</button>
+        </div>
+        <input type="file" id="invFile" accept="image/*,application/pdf,.pdf,.eml,.txt,message/rfc822" hidden onchange="invFileChosen(this)">
+        <input type="file" id="invCam" accept="image/*" capture="environment" hidden onchange="invFileChosen(this)">
+        <div id="recentScansWrap" style="display:none">
+          <div class="section-title">Previously scanned <span class="see-all" onclick="go('scans')">See all</span></div>
+          <div class="card" style="padding:4px 16px" id="recentScans"></div>
+        </div>
+      </div>
+      <div id="invWorking" class="card" style="display:none;text-align:center">
+        <div class="spinner"></div>
+        <b>Reading your invoice…</b>
+        <div class="muted small" style="margin-top:4px" id="invProgress"></div>
+      </div>
+      <div id="invResult" style="display:none"></div>
+    </section>
+
+    <!-- SCANNED INVOICES -->
+    <section class="screen" id="s-scans">
+      <p class="muted" style="font-size:.84rem;margin:0 4px 12px;line-height:1.4">Every invoice you've scanned, grouped by month. Tap one to see the full checks again.</p>
+      <div class="scan-tools" id="scanTools">
+        <select id="scanSort" onchange="renderScans()" aria-label="Sort invoices">
+          <option value="new">Newest month first</option>
+          <option value="old">Oldest month first</option>
+        </select>
+        <button class="btn ghost sm" id="selectBtn" onclick="toggleSelectMode()">Select</button>
+      </div>
+      <div id="scanList"></div>
+      <div class="select-bar" id="selectBar" style="display:none">
+        <button class="btn ghost sm" id="selectAllBtn" onclick="selectAllScans()">Select all</button>
+        <button class="btn sm" id="removeBtn" onclick="removeSelected()" disabled>Remove selected</button>
+      </div>
+      <button class="btn ghost" id="clearScansBtn" onclick="clearScans()">Clear history</button>
+    </section>
+
+    <!-- BIG PAYMENT PLAN -->
+    <section class="screen" id="s-bigplan"><div id="planBody"></div></section>
+
+    <!-- PAYEES -->
+    <section class="screen" id="s-payees">
+      <button class="btn" style="margin-top:0" onclick="startPay()">+ Pay someone new</button>
+      <div class="section-title">Payees</div>
+      <div class="card" style="padding:4px 16px" id="payeeList"></div>
+      <div class="section-title">BPAY billers</div>
+      <div class="card" style="padding:4px 16px" id="billerList"></div>
+    </section>
+
+    <!-- CARDS -->
+    <section class="screen" id="s-cards">
+      <div class="bank-card" id="cardVisual">
+        <div style="display:flex;justify-content:space-between;align-items:center"><b>Westpac</b><span class="small" id="cardState">Debit Mastercard</span></div>
+        <div class="num">•••• •••• •••• 4821</div>
+        <div style="display:flex;justify-content:space-between" class="small"><span>ALEX CHEN</span><span>09/29</span></div>
+      </div>
+      <div class="card" style="margin-top:16px;padding:4px 16px">
+        <div class="row-item" style="cursor:default"><div class="info"><b>Lock card</b><span>Stop new purchases. You can unlock any time.</span></div><button class="toggle" id="cardLockBtn" onclick="toggleLock()" aria-label="Lock card"></button></div>
+        <div class="row-item" onclick="toast('Card limits: $2,000 a day for ATM and purchases')"><div class="info"><b>Card limits</b><span>Daily ATM and purchase limits</span></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="toast('Card reported. A new card is on its way.')"><div class="info"><b>Report lost or stolen</b><span>Cancel this card and order a new one</span></div><span class="chev">›</span></div>
+      </div>
+    </section>
+
+    <!-- MORE -->
+    <section class="screen" id="s-more">
+      <div class="card" style="display:flex;gap:12px;align-items:center">
+        <span class="ri-ic" style="width:48px;height:48px" id="profInit">AC</span>
+        <div><b id="profName">Alex Chen</b><div class="muted small" id="profSince">Customer since 2014</div></div>
+      </div>
+      <div class="section-title">Your identity (KYC)</div>
+      <div class="card" id="kycCard"><div class="muted small">Loading…</div></div>
+      <div class="section-title">Scam Protect</div>
+      <div class="card" style="padding:4px 16px">
+        <div class="row-item" onclick="openInvoice()"><div class="info"><b>Scan an invoice</b><span>Check a business invoice before you pay</span></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="go('scans')"><div class="info"><b>Scanned invoices</b><span>Invoices you've scanned and what we found</span></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="go('check')"><div class="info"><b>Check a suspicious message</b><span>Texts and emails asking for money or details</span></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="go('bigplan')"><div class="info"><b>Plan a big payment</b><span>Tell us first, and big payments go straight through</span></div><span class="chev">›</span></div>
+      </div>
+      <div class="note info">
+        <b>How Scam Protect works</b><br>Before money leaves your account, we check the name on the account, scam reports from other customers, and, for invoices, whether the business is real and the invoice was changed. We tell you everything we find in plain language. We never block your payment. It's always your decision.
+      </div>
+      <div class="section-title">Settings</div>
+      <div class="card" style="padding:4px 16px">
+        <div class="row-item" onclick="go('payees')"><div class="info"><b>Payees and billers</b></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="toast('Call 132 032, or chat with us in the app')"><div class="info"><b>Help and support</b></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="resetDemo()"><div class="info"><b>Reset demo</b><span>Clears the big payment plan and reloads</span></div><span class="chev">›</span></div>
+      </div>
+      <p class="muted" style="font-size:.72rem;text-align:center">Prototype for the Westpac Hackathon 2026. Demo data only.</p>
+    </section>
+
+    <!-- MESSAGE CHECK -->
+    <section class="screen" id="s-check">
+      <div class="card">
+        <b>Not sure about a message?</b>
+        <p class="muted" style="font-size:.84rem;margin:6px 0 0">Paste a text or email that asks you to pay or share details. We'll check it for scam signs.</p>
+        <label>Message</label>
+        <textarea id="msg" rows="6" placeholder="Paste the message here"></textarea>
+        <button class="btn" onclick="checkMsg()">Check message</button>
+        <div id="msgResult"></div>
+      </div>
+      <div class="section-title">Try an example</div>
+      <div class="card" style="padding:4px 16px">
+        <div class="row-item" onclick="msgPreset(0)"><div class="info"><b>Fake bank text</b></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="msgPreset(1)"><div class="info"><b>"Our bank details have changed"</b></div><span class="chev">›</span></div>
+        <div class="row-item" onclick="msgPreset(2)"><div class="info"><b>Normal message</b></div><span class="chev">›</span></div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="nav">
+    <button class="on" data-tab="home" onclick="goTab('home')"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 9.5V20h5v-6h4v6h5V9.5"/></svg></span>Home</button>
+    <button data-tab="pay" onclick="goTab('pay')"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 8h14l-4-4M20 16H6l4 4"/></svg></span>Pay</button>
+    <button class="scan" data-tab="invoice" onclick="goTab('invoice')"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg></span>Scan</button>
+    <button data-tab="cards" onclick="goTab('cards')"><span class="ic"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6 15h3"/></svg></span>Cards</button>
+    <button data-tab="more" onclick="goTab('more')"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></span>More</button>
+  </nav>
+
+  <!-- Scam Protect sheet -->
+  <div class="overlay" id="overlay">
+    <div class="sheet">
+      <h3 id="sheetTitle">Before you pay</h3>
+      <div style="font-size:.88rem" id="why"></div>
+      <div class="meter"><span id="meter"></span></div>
+      <div id="riskLabel" style="font-size:.78rem;font-weight:700"></div>
+      <div id="questions"></div>
+      <div id="verdict"></div>
+      <button class="btn" id="submitAns" onclick="finishCheck()">Continue</button>
+      <button class="btn ghost" onclick="cancelPay()">Cancel payment</button>
+    </div>
+  </div>
+
+  <div class="server-down" id="serverDown">
+    <div class="inv-hero-ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M12 8v5M12 16.5v.5"/></svg></div>
+    <h2>Scam Protect server isn't running</h2>
+    <p>All the scam checks run on the server. Open a terminal in the project folder and run:</p>
+    <p><code>npm install</code> (first time only), then <code>npm start</code></p>
+    <p>Then open <b>http://localhost:3000</b></p>
+    <button class="btn" style="max-width:220px" onclick="checkServer()">Try again</button>
+  </div>
+
+  <div class="camera" id="camera" role="dialog" aria-label="Camera">
+    <div class="cam-top"><button class="cam-x" onclick="closeCamera()" aria-label="Close camera">✕</button><span>PHOTO</span><span></span></div>
+    <div class="cam-view" id="camView">
+      <div class="cam-scene"><img class="cam-paper" src="sample-invoice.png" alt="Invoice on a desk"></div>
+      <div class="cam-frame"><i></i><i></i><i></i><i></i></div>
+      <div class="cam-hint" id="camHint">Fit the invoice inside the frame</div>
+      <div class="cam-flash" id="camFlash"></div>
+    </div>
+    <div class="cam-bottom" id="camShoot">
+      <span class="cam-side"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg></span>
+      <button class="shutter" onclick="snapPhoto()" aria-label="Take photo"></button>
+      <span class="cam-side"><svg viewBox="0 0 24 24"><path d="M4 9a8 8 0 0 1 14-3l2 2M20 15a8 8 0 0 1-14 3l-2-2"/><path d="M20 4v4h-4M4 20v-4h4"/></svg></span>
+    </div>
+    <div class="cam-bottom" id="camReview" style="display:none">
+      <button class="cam-txt" onclick="retakePhoto()">Retake</button>
+      <button class="cam-txt use" onclick="usePhoto()">Use Photo</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+</div>
+
+<script src="apis.js"></script>
+<script>
+'use strict';
+const API = window.WestpacAPI;
+
+// ======================================================= Helpers
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const money = n => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const digits = s => String(s || '').replace(/\D/g, '');
+const normId = s => String(s || '').trim().toLowerCase().replace(/\s/g, '');
+const acctKey = (bsb, acc) => digits(bsb) + digits(acc);
+const fmtAcc = a => { const d = digits(a); return d.length > 4 ? d.slice(0, -4) + ' ' + d.slice(-4) : d; };
+const fmtBsbStr = b => { const d = digits(b).slice(0, 6); return d.length > 3 ? d.slice(0, 3) + '-' + d.slice(3) : d; };
+const parseAmt = s => { const n = parseFloat(String(s || '').replace(/[$,\s]/g, '')); return isFinite(n) ? Math.round(n * 100) / 100 : NaN; };
+const initials = n => String(n).split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+let toastTimer = null;
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2400); }
+function apiError(e) { toast(e && e.message ? e.message : 'Something went wrong. Please try again.'); }
+
+// ======================================================= Customer data (the customer's own accounts and history)
+const me = { first: 'Alex', last: 'Chen' };
+const accounts = [
+  { id: 'chq', name: 'Westpac Choice', type: 'Everyday account', bsb: '032-123', acc: '456 789', bal: 4820.55 },
+  { id: 'sav', name: 'Westpac Life', type: 'Savings account', bsb: '032-123', acc: '987 654', bal: 15200.00 },
+];
+let payees = [
+  { name: 'Sam Lee', bsb: '062-000', acc: '12345678', times: 14 },
+  { name: 'Jordan Smith', bsb: '082-401', acc: '99887766', times: 3 },
+  { name: 'Bayside Property Rentals', bsb: '033-001', acc: '22334455', times: 24, business: true },
+  { name: 'Bright Spark Electrical', bsb: '063-010', acc: '44332211', times: 2, business: true },
+  { name: 'Sam Lee', payid: '0412345678', times: 5 },
+  { name: 'Bright Spark Electrical', payid: '62301987403', times: 1, business: true },
+];
+const billers = [
+  { name: 'Harbour Energy', code: '12345', ref: '4455667788' },
+  { name: 'CityNet Internet', code: '23456', ref: '99001122' },
+];
+let nextTxId = 1;
+let txs = [
+  { acct: 'chq', desc: 'Woolworths Metro', date: 'Today', amt: -42.80 },
+  { acct: 'chq', desc: 'Salary - ACME Pty Ltd', date: 'Yesterday', amt: 3150.00 },
+  { acct: 'chq', desc: 'Bayside Property Rentals - Rent', date: '12 Nov', amt: -1800.00, key: '03300122334455', name: 'Bayside Property Rentals' },
+  { acct: 'chq', desc: 'Sam Lee - Dinner', date: '10 Nov', amt: -65.00, key: '06200012345678', name: 'Sam Lee' },
+  { acct: 'chq', desc: 'Harbour Energy (BPAY)', date: '4 Nov', amt: -212.40 },
+  { acct: 'sav', desc: 'Interest', date: '1 Nov', amt: 48.12 },
+].map(t => Object.assign({ id: nextTxId++ }, t));
+// What the customer saw last time they paid each business's invoice (their own history, by ABN)
+const invoiceHistory = {
+  '51824753524': { bsb: '034-002', acc: '11223344', last: '14 Aug', font: 'Helvetica', domain: 'sydneycitymotors.com.au' },
+  '62301987403': { bsb: '063-010', acc: '44332211', last: '2 Oct', font: 'Arial', domain: 'brightspark.com.au' },
+};
+const BIG = 2000;
+const scamQuestions = [
+  'Did someone contact you out of the blue and ask you to make this payment?',
+  'Did you get these bank details from an email, text or call, rather than directly from the person or business?',
+  'Are you being rushed, or asked to keep this payment secret?',
+];
+const acctById = id => accounts.find(a => a.id === id);
+function findPayee(to) {
+  return payees.find(p => to.type === 'bsb' ? (p.bsb && acctKey(p.bsb, p.acc) === to.key) : (p.payid && normId(p.payid) === to.key));
+}
+
+// ======================================================= Navigation
+const SCREENS = {
+  home: { title: '', tab: 'home' }, account: { title: 'Account', tab: 'home' },
+  pay: { title: 'Pay & transfer', tab: 'pay' }, payform: { title: 'Pay someone', tab: 'pay' }, bpay: { title: 'Pay a bill', tab: 'pay' },
+  review: { title: 'Review payment', tab: 'pay' }, transfer: { title: 'Transfer', tab: 'pay' }, receipt: { title: 'Receipt', tab: 'pay' },
+  bigplan: { title: 'Big payment', tab: 'pay' }, payees: { title: 'Payees and billers', tab: 'pay' },
+  invoice: { title: 'Scan an invoice', tab: 'invoice' }, scans: { title: 'Scanned invoices', tab: 'invoice' },
+  cards: { title: 'Cards', tab: 'cards' }, more: { title: 'More', tab: 'more' }, check: { title: 'Check a message', tab: 'more' },
+};
+let navStack = ['home'];
+function go(s, push = true) {
+  const cfg = SCREENS[s];
+  document.querySelectorAll('.screen').forEach(x => x.classList.toggle('on', x.id === 's-' + s));
+  if (push && navStack[navStack.length - 1] !== s) navStack.push(s);
+  const isHome = s === 'home';
+  $('topbar').classList.toggle('red', isHome);
+  $('statusbar').classList.toggle('red', isHome);
+  $('brand').style.display = isHome ? '' : 'none';
+  $('title').textContent = cfg.title;
+  $('backBtn').style.display = !isHome && s !== 'receipt' && navStack.length > 1 ? '' : 'none';
+  document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === cfg.tab));
+  if (s === 'home') render();
+  if (s === 'payees') renderPayees();
+  if (s === 'bigplan') renderPlan();
+  if (s === 'transfer') fillAcctSelects();
+  if (s === 'scans') { selectMode = false; selectedScans.clear(); renderScans(); }
+  if (s === 'more') loadProfile();
+  $('content').scrollTop = 0;
+}
+function goBack() { if (navStack.length > 1) { navStack.pop(); go(navStack[navStack.length - 1], false); } }
+function goTab(s) { navStack = [s]; if (s === 'invoice') invReset(); go(s, false); }
+function goHome() { goTab('home'); }
+
+// ======================================================= Server connection
+async function checkServer() {
+  try { await API.health(); $('serverDown').style.display = 'none'; return true; }
+  catch (e) { $('serverDown').style.display = 'flex'; return false; }
+}
+
+// ======================================================= Home, accounts, payees
+function greeting() { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; }
+function txHtml(list) {
+  if (!list.length) return '<div class="muted" style="font-size:.9rem">No transactions yet</div>';
+  return list.map(t => `<div class="tx"><div><div>${esc(t.desc)}</div><div class="d">${esc(t.date)}${t.key && t.amt < 0
+      ? (t.reported ? ' · <span style="color:var(--bad)">Reported as scam</span>' : ` · <span class="rep-link" onclick="reportTx(${t.id})">Report as scam</span>`) : ''}</div></div>
+    <div class="amt ${t.amt > 0 ? 'in' : ''}">${t.amt > 0 ? '+' : ''}${money(t.amt)}</div></div>`).join('');
+}
+function render() {
+  $('hello').textContent = `${greeting()}, ${me.first}`;
+  $('totalBal').textContent = money(accounts.reduce((t, a) => t + a.bal, 0));
+  $('acctList').innerHTML = accounts.map(a => `
+    <div class="card acct" onclick="openAccount('${a.id}')">
+      <div class="name">${esc(a.name)}</div>
+      <div class="num">BSB ${a.bsb} · Acc ${a.acc}</div>
+      <div class="bal">${money(a.bal)}</div>
+      <div class="num">Available</div>
+    </div>`).join('');
+  $('recentTx').innerHTML = txHtml(txs.slice(0, 5));
+}
+let currentAcct = null;
+function openAccount(id) {
+  const a = acctById(id); currentAcct = a;
+  $('adType').textContent = a.type; $('adName').textContent = a.name; $('adBal').textContent = money(a.bal);
+  $('adBsb').textContent = a.bsb; $('adAcc').textContent = a.acc;
+  $('adTx').innerHTML = txHtml(txs.filter(t => t.acct === id));
+  go('account');
+}
+function copyDetails() {
+  const t = `${me.first} ${me.last}\n${currentAcct.name}\nBSB: ${currentAcct.bsb}\nAccount: ${currentAcct.acc}`;
+  try { navigator.clipboard.writeText(t); } catch (e) { /* clipboard not available */ }
+  toast('Account details copied');
+}
+function renderPayees() {
+  $('payeeList').innerHTML = payees.map((p, i) => `
+    <div class="row-item" onclick="payPayee(${i})"><span class="ri-ic">${esc(initials(p.name))}</span>
+      <div class="info"><b>${esc(p.name)}</b><span>${p.payid ? 'PayID ' + esc(p.payid) : 'BSB ' + esc(p.bsb) + ' · ' + esc(fmtAcc(p.acc))}${p.business ? ' · Business' : ''}</span></div><span class="chev">›</span></div>`).join('');
+  $('billerList').innerHTML = billers.map((b, i) => `
+    <div class="row-item" onclick="startBpay(${i})"><span class="ri-ic">${esc(initials(b.name))}</span>
+      <div class="info"><b>${esc(b.name)}</b><span>Biller code ${esc(b.code)} · Ref ${esc(b.ref)}</span></div><span class="chev">›</span></div>`).join('');
+}
+function fillAcctSelects() {
+  const opts = accounts.map(a => `<option value="${a.id}">${esc(a.name)} · ${money(a.bal)}</option>`).join('');
+  ['payFrom', 'bpayFrom', 'tFrom', 'tTo'].forEach(id => { const v = $(id).value; $(id).innerHTML = opts; if (v) $(id).value = v; });
+  if ($('tTo').value === $('tFrom').value) $('tTo').value = accounts.find(a => a.id !== $('tFrom').value).id;
+}
+
+// ======================================================= Reporting scams
+async function reportKey(key, name) {
+  let r;
+  try { r = await API.report(key, name); } catch (e) { apiError(e); return false; }
+  if (!r.ok && !r.already) { toast(r.message || 'We couldn\'t send your report.'); return false; }
+  txs.forEach(t => { if (t.key === key) t.reported = true; });
+  toast(r.already ? r.message : 'Reported. Thanks for helping protect other customers.');
+  return true;
+}
+async function reportTx(id) {
+  const t = txs.find(x => x.id === id); if (!t || t.reported) return;
+  if (!(await reportKey(t.key, t.name))) return;
+  render();
+  if (currentAcct && $('s-account').classList.contains('on')) $('adTx').innerHTML = txHtml(txs.filter(x => x.acct === currentAcct.id));
+}
+const notesHtml = items => items.map(i => `<div class="note ${i.level}">${i.html}</div>`).join('');
+
+// ======================================================= Pay someone
+let method = 'bsb', pending = null, invoiceCtx = null;
+function setMethod(m) {
+  method = m;
+  $('tabBsb').classList.toggle('on', m === 'bsb'); $('tabPayid').classList.toggle('on', m === 'payid');
+  $('bsbFields').style.display = m === 'bsb' ? '' : 'none'; $('payidFields').style.display = m === 'payid' ? '' : 'none';
+  scheduleLive();
+}
+function clearPayForm() {
+  ['pName', 'pBsb', 'pAcc', 'pPayid', 'pAmt', 'pDesc'].forEach(id => { $(id).value = ''; });
+  $('pSave').checked = false; $('pBiz').checked = false; $('payErr').textContent = ''; $('liveCheck').innerHTML = '';
+  setMethod('bsb');
+}
+function startPay(fromInvoice) {
+  if (fromInvoice !== true) invoiceCtx = null;
+  fillAcctSelects(); fillPayeePickers(); clearPayForm();
+  $('payInvoice').innerHTML = invoiceCtx ? `<div class="note ${invoiceCtx.level}" style="margin:0 0 4px">Paying an invoice from <b>${esc(invoiceCtx.business || 'a business')}</b>. ${esc(invoiceCtx.summary)}</div>` : '';
+  go('payform');
+}
+function payPayee(i) {
+  const p = payees[i]; startPay();
+  if (p.payid) { setMethod('payid'); $('pPayid').value = p.payid; }
+  else { $('pName').value = p.name; $('pBsb').value = p.bsb; $('pAcc').value = p.acc; }
+  $('pBiz').checked = !!p.business;
+  syncPick(); scheduleLive();
+  setTimeout(() => $('pAmt').focus(), 50);
+}
+function fillPayeePickers() {
+  const opt = (p, i, label) => `<option value="${i}">${esc(p.name)} · ${esc(label)}</option>`;
+  $('pPickBsb').innerHTML = '<option value="">Enter new details</option>' + payees.map((p, i) => p.bsb ? opt(p, i, `${p.bsb} ${fmtAcc(p.acc)}`) : '').join('');
+  $('pPickPayid').innerHTML = '<option value="">Enter a new PayID</option>' + payees.map((p, i) => p.payid ? opt(p, i, p.payid) : '').join('');
+}
+function pickPayee(type) {
+  const p = payees[$(type === 'bsb' ? 'pPickBsb' : 'pPickPayid').value];
+  if (type === 'bsb') { $('pName').value = p ? p.name : ''; $('pBsb').value = p ? p.bsb : ''; $('pAcc').value = p ? p.acc : ''; }
+  else $('pPayid').value = p ? p.payid : '';
+  $('pBiz').checked = !!(p && p.business);
+  scheduleLive();
+  (p ? $('pAmt') : $(type === 'bsb' ? 'pName' : 'pPayid')).focus();
+}
+// The dropdown shows the saved payee when the typed details match one, otherwise "Enter new details"
+function syncPick() {
+  const key = acctKey($('pBsb').value, $('pAcc').value), name = $('pName').value.trim().toLowerCase();
+  const iB = payees.findIndex(p => p.bsb && acctKey(p.bsb, p.acc) === key && p.name.toLowerCase() === name);
+  $('pPickBsb').value = iB >= 0 ? String(iB) : '';
+  const id = normId($('pPayid').value);
+  const iP = payees.findIndex(p => p.payid && normId(p.payid) === id);
+  $('pPickPayid').value = iP >= 0 ? String(iP) : '';
+}
+$('pBsb').addEventListener('input', e => { e.target.value = fmtBsbStr(e.target.value); });
+$('pAcc').addEventListener('input', e => { e.target.value = digits(e.target.value); });
+['pName', 'pBsb', 'pAcc', 'pPayid'].forEach(id => $(id).addEventListener('input', () => { syncPick(); scheduleLive(); }));
+$('pBiz').addEventListener('change', scheduleLive);
+
+// Live name check while typing (runs on the server)
+let liveTimer = null, liveToken = 0;
+function scheduleLive() { clearTimeout(liveTimer); liveTimer = setTimeout(liveCheck, 350); }
+async function liveCheck() {
+  const t = ++liveToken, box = $('liveCheck'), isBusiness = $('pBiz').checked || !!invoiceCtx;
+  let to;
+  if (method === 'bsb') {
+    const name = $('pName').value.trim(), bsb = digits($('pBsb').value), acc = digits($('pAcc').value);
+    if (!name || bsb.length !== 6 || acc.length < 6) { box.innerHTML = ''; return; }
+    to = { type: 'bsb', name, bsb, acc };
+    box.innerHTML = '<div class="note info">Checking the name on this account…</div>';
+  } else {
+    const id = normId($('pPayid').value);
+    if (id.length < 6) { box.innerHTML = ''; return; }
+    to = { type: 'payid', payid: id };
+    box.innerHTML = '<div class="note info">Looking up this PayID…</div>';
+  }
+  let res;
+  try { res = await API.nameCheck({ to, isBusiness }); }
+  catch (e) { if (t === liveToken) box.innerHTML = `<div class="note warn">${esc(e.message)}</div>`; return; }
+  if (t !== liveToken) return;
+  box.innerHTML = res.found ? notesHtml(res.items) : '<div class="note warn">This PayID isn\'t registered yet. Check it with the person or business you\'re paying.</div>';
+}
+
+function err(t) { $('payErr').textContent = t; }
+const invoiceFlags = c => ({ detailsChanged: !!c.detailsChanged, abnProblem: c.abnProblem || null, edited: !!c.edited, lookalike: !!c.lookalike, changedWording: !!c.changedWording, newAbn: !!c.newAbn, verified: !!c.verified });
+async function review() {
+  const from = acctById($('payFrom').value), amt = parseAmt($('pAmt').value);
+  let to;
+  if (method === 'bsb') {
+    const name = $('pName').value.trim(), bsb = digits($('pBsb').value), acc = digits($('pAcc').value);
+    if (!name) return err('Enter the account name.');
+    if (bsb.length !== 6) return err('BSB must be 6 digits.');
+    if (acc.length < 6 || acc.length > 9) return err('Account number must be 6 to 9 digits.');
+    to = { type: 'bsb', name, bsb: fmtBsbStr(bsb), acc, key: bsb + acc };
+  } else {
+    const id = normId($('pPayid').value);
+    if (!id) return err('Enter a PayID.');
+    to = { type: 'payid', payid: id, key: id };
+  }
+  if (!(amt > 0)) return err('Enter an amount.');
+  if (amt > from.bal) return err(`Not enough money in ${from.name}.`);
+  err('');
+  const invoice = invoiceCtx && invoiceCtx.key === to.key ? invoiceCtx : null;
+  const saved = findPayee(to);
+  const isBusiness = $('pBiz').checked || !!invoice || !!(saved && saved.business);
+  const btn = $('reviewBtn'); btn.disabled = true; btn.textContent = 'Checking…';
+  let res;
+  try {
+    res = await API.reviewPayment({
+      to: to.type === 'bsb' ? { type: 'bsb', name: to.name, bsb: to.bsb, acc: to.acc } : { type: 'payid', payid: to.payid },
+      amt, desc: $('pDesc').value.trim(), isBusiness, balance: from.bal,
+      known: saved ? { times: saved.times } : null,
+      plan: planState() === 'active' ? { amt: plan.amt } : null,
+      invoice: invoice ? invoiceFlags(invoice) : null,
+    });
+  } catch (e) { err(e.message); return; }
+  finally { btn.disabled = false; btn.textContent = 'Review payment'; }
+  if (res.error) return err(res.error);
+  to.name = res.name;
+  pending = { kind: 'pay', from, to, amt, desc: $('pDesc').value.trim(), saved, knownCounts: res.knownCounts, save: $('pSave').checked, invoice, intel: res.intel, isBusiness, risk: res.risk };
+  $('rAmt').textContent = money(amt);
+  $('rTo').textContent = 'to ' + to.name;
+  $('rDetails').innerHTML = `
+    <div class="review-row"><span>From</span><span>${esc(from.name)}<br><small class="muted">${from.bsb} ${from.acc}</small></span></div>
+    <div class="review-row"><span>To</span><span>${esc(to.name)}${res.knownCounts ? '' : ' <small style="color:var(--warn)">(new payee)</small>'}</span></div>
+    ${to.type === 'bsb'
+      ? `<div class="review-row"><span>BSB</span><span>${esc(to.bsb)}</span></div><div class="review-row"><span>Account</span><span>${esc(fmtAcc(to.acc))}</span></div>
+         <div class="review-row"><span>Bank</span><span>${res.sameBank ? 'Westpac' : 'Another bank'}</span></div>`
+      : `<div class="review-row"><span>PayID</span><span>${esc(to.payid)}</span></div>`}
+    <div class="review-row"><span>Description</span><span>${esc(pending.desc) || '-'}</span></div>
+    <div class="review-row"><span>When</span><span>Now (Osko fast payment)</span></div>`;
+  $('rNotes').innerHTML = notesHtml(res.items) + (invoice ? `<div class="note ${invoice.level}"><b>Invoice checks:</b> ${esc(invoice.summary)}</div>` : '');
+  go('review');
+}
+
+// ======================================================= BPAY
+function startBpay(i) {
+  fillAcctSelects();
+  $('bPick').innerHTML = '<option value="">Enter new biller</option>' + billers.map((b, j) => `<option value="${j}">${esc(b.name)} · ${esc(b.code)}</option>`).join('');
+  $('bCode').value = ''; $('bRef').value = ''; $('bAmt').value = ''; $('bpayErr').textContent = ''; $('billerCheck').innerHTML = '';
+  go('bpay');
+  if (typeof i === 'number') { $('bPick').value = String(i); pickBiller(); }
+}
+function pickBiller() {
+  const b = billers[$('bPick').value];
+  $('bCode').value = b ? b.code : ''; $('bRef').value = b ? b.ref : '';
+  scheduleBiller();
+  (b ? $('bAmt') : $('bCode')).focus();
+}
+let billerTimer = null, billerToken = 0;
+function scheduleBiller() { clearTimeout(billerTimer); billerTimer = setTimeout(billerLookup, 300); }
+async function billerLookup() {
+  const t = ++billerToken, code = digits($('bCode').value);
+  if (code.length < 4) { $('billerCheck').innerHTML = ''; return; }
+  let r;
+  try { r = await API.biller(code); } catch (e) { if (t === billerToken) $('billerCheck').innerHTML = `<div class="note warn">${esc(e.message)}</div>`; return; }
+  if (t !== billerToken) return;
+  $('billerCheck').innerHTML = r.found ? `<div class="note ok">✓ Registered BPAY biller: <b>${esc(r.name)}</b></div>` : '<div class="note warn">We can\'t find this biller code. Check it on your bill.</div>';
+}
+['bCode', 'bRef'].forEach(id => $(id).addEventListener('input', e => { e.target.value = digits(e.target.value); if (id === 'bCode') scheduleBiller(); }));
+async function reviewBpay() {
+  const from = acctById($('bpayFrom').value), code = digits($('bCode').value), ref = digits($('bRef').value), amt = parseAmt($('bAmt').value);
+  const e = t => { $('bpayErr').textContent = t; };
+  if (code.length < 4) return e('Enter the biller code from your bill.');
+  if (ref.length < 2) return e('Enter the reference number from your bill.');
+  if (!(amt > 0)) return e('Enter an amount.');
+  if (amt > from.bal) return e(`Not enough money in ${from.name}.`);
+  let r;
+  try { r = await API.biller(code); } catch (x) { return e(x.message); }
+  if (!r.found) return e("We can't find this biller code. Check it on your bill.");
+  e('');
+  pending = { kind: 'bpay', from, amt, biller: { code, ref, name: r.name } };
+  $('rAmt').textContent = money(amt); $('rTo').textContent = 'to ' + r.name;
+  $('rDetails').innerHTML = `
+    <div class="review-row"><span>From</span><span>${esc(from.name)}</span></div>
+    <div class="review-row"><span>Biller</span><span>${esc(r.name)}</span></div>
+    <div class="review-row"><span>Biller code</span><span>${esc(code)}</span></div>
+    <div class="review-row"><span>Reference</span><span>${esc(ref)}</span></div>
+    <div class="review-row"><span>When</span><span>Today</span></div>`;
+  $('rNotes').innerHTML = `<div class="note ok">✓ ${esc(r.name)} is a registered BPAY biller.</div>`;
+  go('review');
+}
+
+// ======================================================= Confirm: inform, never block (score comes from the server)
+function confirmPay() {
+  if (!pending) return;
+  if (pending.kind === 'bpay') return complete();
+  const r = pending.risk;
+  if (r.score < 30 && !r.forced) return complete();
+  const planNote = r.overPlan ? `<div class="note warn"><b>This is more than the ${money(r.planAmt)} you planned for</b>, so we're checking it like any other big payment. You can still pay.</div>` : '';
+  $('why').innerHTML = (r.reasons.length ? '<p style="margin:4px 0">Here\'s what we found:</p><ul style="margin:0;padding-left:18px">' + r.reasons.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>' : '')
+    + (planNote || (r.forced ? '<p class="muted" style="margin:8px 0 0;font-size:.8rem">Tip: next time, tap "Planning a big payment?" on the home screen first, and big payments go through without this check.</p>' : ''));
+  setMeter(r.score);
+  pending.answers = {};
+  $('verdict').innerHTML = '';
+  if (r.score < 50 && !r.forced) {
+    $('sheetTitle').textContent = 'Quick check before you pay'; $('sheetTitle').style.color = 'var(--warn)';
+    $('questions').innerHTML = ''; $('submitAns').style.display = 'none';
+    $('verdict').innerHTML = `<button class="btn" onclick="complete()">Pay ${money(pending.amt)}</button>`;
+  } else {
+    $('sheetTitle').textContent = 'Before you pay, a few quick questions'; $('sheetTitle').style.color = 'var(--bad)';
+    $('questions').innerHTML = scamQuestions.map((q, i) => `<div class="q">${esc(q)}<div><button onclick="ans(${i},1,this)">Yes</button><button onclick="ans(${i},0,this)">No</button></div></div>`).join('');
+    $('submitAns').style.display = '';
+  }
+  $('overlay').classList.add('show');
+}
+function ans(i, v, btn) {
+  pending.answers[i] = v;
+  btn.parentNode.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+async function finishCheck() {
+  if (!pending) return;
+  if (Object.keys(pending.answers).length < scamQuestions.length) { $('verdict').innerHTML = '<div class="note warn">Please answer all three questions.</div>'; return; }
+  const btn = $('submitAns'); btn.disabled = true;
+  let v;
+  try { v = await API.answers({ score: pending.risk.score, answers: scamQuestions.map((_, i) => pending.answers[i]), reported: pending.intel.reports > 0 }); }
+  catch (e) { btn.disabled = false; $('verdict').innerHTML = `<div class="note warn">${esc(e.message)}</div>`; return; }
+  btn.disabled = false;
+  if (v.error) { $('verdict').innerHTML = `<div class="note warn">${esc(v.error)}</div>`; return; }
+  setMeter(v.total);
+  btn.style.display = 'none'; $('questions').innerHTML = '';
+  if (v.strong) {
+    $('verdict').innerHTML = `<div class="note bad"><b>This payment has a ${esc(v.level)} risk of being a scam.</b>
+      ${v.reasons.length ? '<ul>' + v.reasons.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>' : ''}
+      <br><b>Before you decide:</b> contact the person or business using a phone number you find yourself, not one from the message or invoice. Payments usually can't be recovered once they're sent.<br><br>It's your money and your decision.</div>
+      <button class="btn" onclick="cancelPay()">Don't pay (recommended)</button>
+      <button class="btn ghost" onclick="toast('A specialist will call you on your registered number within 10 minutes.')">Talk to us first</button>
+      <button class="btn ghost" onclick="complete()">I understand the risks, pay ${money(pending.amt)}</button>`;
+  } else {
+    $('verdict').innerHTML = `<div class="note warn">Thanks. Your answers lower the risk, but this payment is still unusual. Once sent, it may not be recoverable.</div>
+      <button class="btn" onclick="complete()">Pay ${money(pending.amt)}</button>`;
+  }
+}
+function setMeter(s) {
+  $('meter').style.width = s + '%';
+  $('meter').style.background = s >= 50 ? 'var(--bad)' : s >= 30 ? 'var(--warn)' : 'var(--ok)';
+  $('riskLabel').textContent = `Scam risk: ${s}/100 (${s >= 70 ? 'very high' : s >= 50 ? 'high' : s >= 30 ? 'medium' : 'low'})`;
+}
+function cancelPay() {
+  $('overlay').classList.remove('show');
+  if (pending && pending.invoice && pending.invoice.scanId) setScanStatus(pending.invoice.scanId, 'Not paid');
+  pending = null; toast('Payment cancelled. No money was sent.'); goHome();
+}
+
+let lastPaid = null;
+function complete() {
+  const p = pending; if (!p) return;
+  $('overlay').classList.remove('show');
+  p.from.bal = Math.round((p.from.bal - p.amt) * 100) / 100;
+  const ref = 'WBC' + Math.floor(10000000 + Math.random() * 90000000);
+  let toName, extra = '';
+  if (p.kind === 'bpay') {
+    toName = p.biller.name;
+    txs.unshift({ id: nextTxId++, acct: p.from.id, desc: `${p.biller.name} (BPAY)`, date: 'Just now', amt: -p.amt });
+    lastPaid = null;
+  } else {
+    toName = p.to.name;
+    txs.unshift({ id: nextTxId++, acct: p.from.id, desc: p.to.name + (p.desc ? ' - ' + p.desc : ''), date: 'Just now', amt: -p.amt, key: p.to.key, name: p.to.name });
+    if (p.saved && p.knownCounts) p.saved.times++;
+    else if (p.save) payees.push(p.to.type === 'bsb' ? { name: p.to.name, bsb: p.to.bsb, acc: p.to.acc, times: 1, business: p.isBusiness } : { name: p.to.name, payid: p.to.payid, times: 1, business: p.isBusiness });
+    // Only remember invoice details from invoices with no serious problems
+    if (p.invoice && p.invoice.abn && p.invoice.level !== 'bad') {
+      const old = invoiceHistory[p.invoice.abn] || {};
+      invoiceHistory[p.invoice.abn] = { bsb: p.to.bsb, acc: p.to.acc, last: 'today', font: p.invoice.mainFont || old.font, domain: p.invoice.emailDomain || old.domain };
+    }
+    if (p.invoice && p.invoice.scanId) setScanStatus(p.invoice.scanId, 'Paid', p.amt);
+    lastPaid = { key: p.to.key, name: p.to.name };
+    extra = `<div class="review-row"><span>Scam risk check</span><span>${p.risk.score}/100</span></div>`;
+  }
+  $('receiptBody').innerHTML = `<div class="tick">✓</div><h2 style="margin:0">Payment sent</h2>
+    <div class="big-amt">${money(p.amt)}</div><p class="muted" style="margin-top:0">to ${esc(toName)}</p>
+    <div class="card" style="text-align:left">
+      <div class="review-row"><span>Receipt number</span><span>${ref}</span></div>
+      <div class="review-row"><span>From</span><span>${esc(p.from.name)}</span></div>
+      <div class="review-row"><span>New balance</span><span>${money(p.from.bal)}</span></div>${extra}
+    </div>
+    ${lastPaid ? '<p class="muted small" id="repLine">Something not right? <span class="rep-link" onclick="reportLast()">Report this as a scam</span></p>' : ''}`;
+  pending = null; invoiceCtx = null;
+  navStack = ['home']; go('receipt', false);
+}
+async function reportLast() {
+  if (!lastPaid) return;
+  const l = lastPaid;
+  if (await reportKey(l.key, l.name)) { lastPaid = null; $('repLine').innerHTML = '<b>Reported.</b> Thank you.'; }
+}
+
+// ======================================================= Transfer
+function doTransfer() {
+  const from = acctById($('tFrom').value), to = acctById($('tTo').value), amt = parseAmt($('tAmt').value);
+  const e = t => { $('tErr').textContent = t; };
+  if (from === to) return e('Choose two different accounts.');
+  if (!(amt > 0)) return e('Enter an amount.');
+  if (amt > from.bal) return e(`Not enough money in ${from.name}.`);
+  from.bal = Math.round((from.bal - amt) * 100) / 100; to.bal = Math.round((to.bal + amt) * 100) / 100;
+  txs.unshift({ id: nextTxId++, acct: to.id, desc: 'Transfer from ' + from.name, date: 'Just now', amt });
+  txs.unshift({ id: nextTxId++, acct: from.id, desc: 'Transfer to ' + to.name, date: 'Just now', amt: -amt });
+  $('tAmt').value = ''; e('');
+  $('receiptBody').innerHTML = `<div class="tick">✓</div><h2 style="margin:0">Transfer complete</h2><div class="big-amt">${money(amt)}</div>
+    <p class="muted">${esc(from.name)} → ${esc(to.name)}</p>`;
+  navStack = ['home']; go('receipt', false);
+}
+
+// ======================================================= Cards
+let cardLocked = false;
+function toggleLock() {
+  cardLocked = !cardLocked;
+  $('cardLockBtn').classList.toggle('on', cardLocked);
+  $('cardVisual').classList.toggle('locked', cardLocked);
+  $('cardState').textContent = cardLocked ? 'Locked' : 'Debit Mastercard';
+  toast(cardLocked ? 'Card locked' : 'Card unlocked');
+}
+function resetDemo() { try { localStorage.removeItem('bigPlan'); localStorage.removeItem('scannedInvoices'); } catch (e) { /* storage blocked */ } location.reload(); }
+
+// ======================================================= Message checker (runs on the server)
+const msgs = [
+  'Westpac: Your account has been suspended due to unusual activity. Verify your account within 12 hours at http://westpac-secure-login.co',
+  'Hi, this is Bright Spark Electrical accounts. Please note our bank details have changed. Pay invoice INV-2231 urgently to our new account today: BSB 013-999 Acc 55551212.',
+  'Hey, are we still on for dinner Friday? I booked the place near the station for 7pm.',
+];
+function msgPreset(i) { $('msg').value = msgs[i]; $('msgResult').innerHTML = ''; $('content').scrollTop = 0; }
+async function checkMsg() {
+  const text = $('msg').value; if (!text.trim()) return;
+  let r;
+  try { r = await API.checkMessage(text); } catch (e) { $('msgResult').innerHTML = `<div class="note warn">${esc(e.message)}</div>`; return; }
+  $('msgResult').innerHTML = r.level === 'bad' ? `<div class="note bad"><b>Likely scam</b><ul>${r.findings.map(x => `<li>${esc(x)}</li>`).join('')}</ul><br>Don't click links or reply. Delete the message.</div>`
+    : r.level === 'warn' ? `<div class="note warn"><b>Be careful</b><ul><li>${esc(r.findings[0])}</li></ul></div>`
+    : '<div class="note ok"><b>No common scam signs found.</b> Still, never share passwords or one-time codes with anyone.</div>';
+}
+
+// ======================================================= Invoice scanner
+// Upload (default) and Email are tabs; Photo opens the phone's camera app straight away.
+let currentInv = null, invTimer = null, invToken = 0, fromCamera = false;
+function setInvMode(m) {
+  $('tileUpload').classList.toggle('sel', m === 'upload');
+  $('tileEmail').classList.toggle('sel', m === 'email');
+  $('panelUpload').style.display = m === 'upload' ? '' : 'none';
+  $('panelEmail').style.display = m === 'email' ? '' : 'none';
+  if (m === 'email') $('invText').focus();
+}
+// Photo opens a mock camera app inside the phone. Pressing the shutter "photographs" the invoice
+// on the desk; Use Photo sends that picture to the server to be read like any other photo.
+function takePhoto() { openCamera(); }
+function openCamera() {
+  $('camera').classList.add('open');
+  $('camView').classList.remove('frozen');
+  $('camHint').style.display = '';
+  $('camShoot').style.display = ''; $('camReview').style.display = 'none';
+}
+function closeCamera() { $('camera').classList.remove('open'); }
+function snapPhoto() {
+  $('camView').classList.add('frozen');
+  const f = $('camFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  $('camHint').style.display = 'none';
+  $('camShoot').style.display = 'none'; $('camReview').style.display = '';
+}
+function retakePhoto() { openCamera(); }
+async function usePhoto() {
+  let blob;
+  try {
+    const r = await fetch('sample-invoice.png');
+    if (!r.ok) throw new Error();
+    blob = await r.blob();
+  } catch (e) { toast("Couldn't save the photo. Is the server running?"); return; }
+  closeCamera();
+  fromCamera = true;
+  const stamp = new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }).replace(/\s/g, '');
+  handleInvoiceFile(new File([blob], `Photo ${stamp}.png`, { type: 'image/png' }));
+}
+function chooseFile() { fromCamera = false; $('invFile').value = ''; $('invFile').click(); }
+function openInvoice() { invReset(); go('invoice'); }
+function invReset() {
+  currentInv = null; invToken++;
+  $('invInput').style.display = ''; $('invWorking').style.display = 'none'; $('invResult').style.display = 'none'; $('invResult').innerHTML = '';
+  $('invText').value = ''; $('invFile').value = ''; $('invCam').value = '';
+  setInvMode('upload');
+  renderRecentScans();
+}
+function working(on, msg) { $('invInput').style.display = on ? 'none' : ''; $('invWorking').style.display = on ? '' : 'none'; $('invProgress').textContent = msg || ''; }
+
+// Drag and drop, and paste a screenshot
+(function () {
+  const d = $('drop');
+  ['dragenter', 'dragover'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => d.addEventListener(ev, e => { e.preventDefault(); d.classList.remove('over'); }));
+  d.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) { fromCamera = false; handleInvoiceFile(f); } });
+  const onInvoiceInput = () => $('s-invoice').classList.contains('on') && $('invInput').style.display !== 'none';
+  document.addEventListener('dragover', e => { if (onInvoiceInput()) e.preventDefault(); });
+  document.addEventListener('drop', e => { if (onInvoiceInput() && !e.target.closest('#drop')) { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) { fromCamera = false; handleInvoiceFile(f); } } });
+  document.addEventListener('paste', e => {
+    if (!onInvoiceInput()) return;
+    const item = Array.from((e.clipboardData && e.clipboardData.items) || []).find(i => i.type.startsWith('image/'));
+    if (item) { e.preventDefault(); fromCamera = false; handleInvoiceFile(item.getAsFile()); }
+  });
+})();
+function invFileChosen(input) { const f = input.files[0]; if (f) handleInvoiceFile(f); }
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1] || '');
+    r.onerror = () => reject(new Error('Could not open this file.'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function handleInvoiceFile(file) {
+  const name = file.name || (fromCamera ? 'Photo' : 'Pasted image');
+  const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(name);
+  const isEmail = /\.(eml|txt)$/i.test(name) || file.type === 'message/rfc822' || file.type === 'text/plain';
+  const source = isEmail ? 'Email file' : isPdf ? 'PDF' : fromCamera ? 'Photo' : 'Image';
+  if (isEmail) return showInvoice({ source, name, text: await file.text(), thumb: null, kind: 'EMAIL', doc: null });
+  if (file.size > 15 * 1024 * 1024) { toast('This file is too large. Try a file under 15 MB.'); return; }
+  working(true, isPdf ? 'Reading the PDF' : 'Reading the text. The first photo can take up to a minute.');
+  try {
+    const r = await API.readInvoice({ name, type: file.type, data: await fileToBase64(file) });
+    showInvoice({ source, name, text: r.text, thumb: isPdf ? null : URL.createObjectURL(file), kind: r.kind, doc: r.doc });
+  } catch (e) {
+    // Couldn't read it: the customer can type the details and the server still checks them
+    showInvoice({ source, name, text: '', thumb: isPdf ? null : URL.createObjectURL(file), kind: isPdf ? 'PDF' : 'IMG', doc: null, failed: true });
+  }
+}
+function invFromText() {
+  const t = $('invText').value.trim(); if (!t) return;
+  showInvoice({ source: /^\s*from:/im.test(t) ? 'Shared email' : 'Pasted text', name: '', text: t, thumb: null, kind: 'EMAIL', doc: null });
+}
+
+const FIELD_IDS = { business: 'iBiz', abn: 'iAbn', accountName: 'iName', bsb: 'iBsb', account: 'iAcc', amount: 'iAmt', reference: 'iRef' };
+function readFields() { const f = {}; Object.keys(FIELD_IDS).forEach(k => { f[k] = $(FIELD_IDS[k]).value; }); return f; }
+function fillFields(f) { Object.keys(FIELD_IDS).forEach(k => { $(FIELD_IDS[k]).value = f && f[k] != null ? f[k] : ''; }); }
+
+function showInvoice(src, scanId, presetFields) {
+  currentInv = { src, scanId: scanId || null, fieldsReady: false, presetFields: presetFields || null };
+  working(false);
+  $('invInput').style.display = 'none';
+  const thumb = src.thumb ? `<img class="inv-thumb" src="${src.thumb}" alt="Invoice">` : `<div class="inv-thumb">${esc(src.kind)}</div>`;
+  const f = (id, label, extra) => `<label for="${id}">${label}</label><input id="${id}" oninput="scheduleInvoiceCheck()" autocomplete="off" ${extra || ''}>`;
+  $('invResult').innerHTML = `
+    <div class="card inv-head">${thumb}
+      <div style="flex:1;min-width:0"><b>${esc(src.source)}</b>
+        <div class="muted small" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(src.name || 'Invoice')}</div>
+        <div class="muted small" style="margin-top:2px;word-break:break-all" id="invFrom"></div></div>
+      <button class="btn ghost sm" style="width:auto;margin:0;padding:6px 12px" onclick="invReset()">Scan another</button></div>
+    ${src.failed ? '<div class="note warn" style="margin:0 0 12px">We couldn\'t read this invoice automatically. Type the details below and we\'ll still check them for you.</div>' : ''}
+    <div id="invSummary"><div class="verdict info"><span class="v-ic">…</span><div><b>Checking your invoice</b><div>This only takes a moment.</div></div></div></div>
+    <div class="card"><b>What we checked</b><div id="invChecks" style="margin-top:4px"></div></div>
+    <div class="card"><b>Payment details</b><div class="muted small">We filled these in from the invoice. Check they match.</div>
+      ${f('iBiz', 'Business name')}
+      ${f('iAbn', 'ABN (or overseas business number)')}
+      ${f('iName', 'Bank account name')}
+      <div class="two"><div>${f('iBsb', 'BSB', 'maxlength="7" inputmode="numeric"')}</div><div>${f('iAcc', 'Account number', 'maxlength="9" inputmode="numeric"')}</div></div>
+      <div class="two"><div>${f('iAmt', 'Amount', 'inputmode="decimal"')}</div><div>${f('iRef', 'Reference', 'maxlength="18"')}</div></div>
+    </div>
+    <div id="invActions"></div>`;
+  $('invResult').style.display = '';
+  $('iBsb').addEventListener('input', e => { e.target.value = fmtBsbStr(e.target.value); });
+  recheckInvoice();
+}
+function scheduleInvoiceCheck() { clearTimeout(invTimer); invTimer = setTimeout(recheckInvoice, 400); }
+
+// Sends the invoice to the server, which runs every check and returns the results
+async function recheckInvoice() {
+  if (!currentInv || !$('iBiz')) return;
+  const t = ++invToken;
+  const fields = currentInv.fieldsReady ? readFields() : currentInv.presetFields;
+  let res;
+  try { res = await API.analyzeInvoice({ text: currentInv.src.text, doc: currentInv.src.doc, fields, history: invoiceHistory }); }
+  catch (e) {
+    if (t === invToken && $('invSummary')) $('invSummary').innerHTML = `<div class="verdict warn"><span class="v-ic">!</span><div><b>We couldn't check this invoice</b><div>${esc(e.message)}</div></div></div>`;
+    return;
+  }
+  if (t !== invToken || !currentInv || !$('invChecks')) return;
+  if (!currentInv.fieldsReady) { fillFields(res.fields); currentInv.fieldsReady = true; }
+  $('invFrom').textContent = res.email ? 'From: ' + res.email.from : '';
+  $('invSummary').innerHTML = `<div class="verdict ${res.level}"><span class="v-ic">${esc(res.verdict.icon)}</span><div><b>${esc(res.verdict.title)}</b><div>${esc(res.verdict.text)}</div></div></div>`;
+  $('invChecks').innerHTML = res.items.map(([l, html]) => l === 'head' ? `<div class="chk-head">${esc(html)}</div>`
+    : `<div class="chk"><span class="dot ${l}">${l === 'ok' ? '✓' : l === 'warn' ? '!' : '✗'}</span><span>${html}</span></div>`).join('');
+  $('invActions').innerHTML = res.level === 'bad'
+    ? `<button class="btn" onclick="setScanStatus(currentInv.scanId, 'Not paid');toast('Good call. Nothing was paid.');goHome()">Don't pay this invoice</button><button class="btn ghost" onclick="payInvoice()">Continue to payment</button>`
+    : '<button class="btn" onclick="payInvoice()">Pay this invoice</button>';
+  currentInv.check = res.check;
+  saveScanRecord();
+  currentInv.check.scanId = currentInv.scanId;
+  showPaidState();
+}
+
+async function payInvoice() {
+  const name = $('iName').value.trim(), bsb = $('iBsb').value, acc = digits($('iAcc').value);
+  if (!name || digits(bsb).length !== 6 || acc.length < 6) { toast('Enter the bank account name, BSB and account number'); return; }
+  clearTimeout(invTimer);
+  await recheckInvoice();
+  if (!currentInv || !currentInv.check) return;
+  const amt = $('iAmt').value, ref = $('iRef').value;
+  invoiceCtx = currentInv.check;
+  setScanStatus(currentInv.scanId, 'Payment started');
+  startPay(true);
+  $('pName').value = name; $('pBsb').value = fmtBsbStr(bsb); $('pAcc').value = acc;
+  $('pAmt').value = amt; $('pDesc').value = ref.slice(0, 18); $('pBiz').checked = true;
+  syncPick(); scheduleLive();
+}
+
+// ======================================================= Scanned invoice history
+// Saved in this browser so it survives a page reload. Images are kept only until the page reloads.
+let scans = [];
+try { const saved = JSON.parse(localStorage.getItem('scannedInvoices')); if (Array.isArray(saved)) scans = saved.filter(x => x && x.id && x.src); } catch (e) { scans = []; }
+const scanThumbs = {};
+function persistScans() { try { localStorage.setItem('scannedInvoices', JSON.stringify(scans.slice(0, 50))); } catch (e) { /* storage full or blocked */ } }
+function saveScanRecord() {
+  if (!currentInv || !currentInv.check) return;
+  const c = currentInv.check;
+  let rec = currentInv.scanId ? scans.find(x => x.id === currentInv.scanId) : null;
+  if (!rec) {
+    rec = { id: Date.now() * 1000 + Math.floor(Math.random() * 1000), at: Date.now(), status: 'Checked',
+      src: { source: currentInv.src.source, name: currentInv.src.name, text: currentInv.src.text, kind: currentInv.src.kind, doc: currentInv.src.doc, failed: !!currentInv.src.failed } };
+    scans.unshift(rec);
+    currentInv.scanId = rec.id;
+    if (currentInv.src.thumb) scanThumbs[rec.id] = currentInv.src.thumb;
+  }
+  rec.business = c.business || 'Unknown business';
+  rec.amount = parseAmt($('iAmt').value);
+  rec.level = c.level; rec.summary = c.summary;
+  rec.fields = readFields();
+  persistScans();
+}
+function setScanStatus(id, status, amt) {
+  const rec = id ? scans.find(x => x.id === id) : null;
+  if (!rec) return;
+  if (rec.status === 'Paid' && status !== 'Paid') return; // a paid invoice stays paid
+  rec.status = status;
+  if (status === 'Paid') { rec.paidAt = Date.now(); if (amt > 0) rec.amount = amt; }
+  persistScans();
+}
+// Paid only if the payment was sent; a possible scam otherwise always shows "Not paid"
+function scanStatus(r) {
+  if (r.status === 'Paid') return 'Paid';
+  if (r.level === 'bad') return 'Not paid';
+  return r.status;
+}
+// A paid invoice can be viewed but not paid again, and its details can't be changed
+function showPaidState() {
+  const rec = currentInv && currentInv.scanId ? scans.find(x => x.id === currentInv.scanId) : null;
+  if (!rec || rec.status !== 'Paid') return;
+  const when = new Date(rec.paidAt || rec.at).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  Object.values(FIELD_IDS).forEach(id => { if ($(id)) $(id).readOnly = true; });
+  $('invActions').innerHTML = `<div class="note ok"><b>✓ Paid${rec.amount > 0 ? ' ' + money(rec.amount) : ''}</b> on ${esc(when)}.<br>This invoice has already been paid, so there's nothing more to do.</div>
+    <button class="btn ghost" onclick="go('scans')">Back to scanned invoices</button>`;
+}
+function scanRow(r, selectable) {
+  const when = new Date(r.at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  const verdict = r.level === 'bad' ? 'Possible scam' : r.level === 'warn' ? 'Check the details' : 'Checks passed';
+  const status = scanStatus(r);
+  const cls = status === 'Paid' ? 'paid' : status === 'Not paid' ? 'notpaid' : '';
+  return `<div class="row-item" onclick="${selectable ? `toggleScan(${r.id})` : `openScan(${r.id})`}">
+    <span class="dot scan-dot ${esc(r.level)}">${r.level === 'ok' ? '✓' : r.level === 'warn' ? '!' : '✗'}</span>
+    <div class="info"><b>${esc(r.business)}</b><span>${r.amount > 0 ? money(r.amount) + ' · ' : ''}${esc(verdict)} · ${esc(when)}</span><br><span class="status ${cls}">${esc(status)}</span></div>
+    ${selectable ? `<span class="pick ${selectedScans.has(r.id) ? 'on' : ''}">✓</span>` : '<span class="chev">›</span>'}</div>`;
+}
+function renderRecentScans() {
+  $('recentScansWrap').style.display = scans.length ? '' : 'none';
+  $('recentScans').innerHTML = scans.slice(0, 3).map(r => scanRow(r, false)).join('');
+}
+let selectMode = false;
+const selectedScans = new Set();
+function renderScans() {
+  if (!scans.length) {
+    selectMode = false; selectedScans.clear();
+    $('scanList').innerHTML = '<div class="card muted" style="font-size:.9rem">No invoices scanned yet. Tap Scan at the bottom to check your first invoice.</div>';
+    $('scanTools').style.display = 'none'; $('selectBar').style.display = 'none'; $('clearScansBtn').style.display = 'none';
+    return;
+  }
+  const newest = $('scanSort').value !== 'old';
+  const sorted = scans.slice().sort((a, b) => newest ? b.at - a.at : a.at - b.at);
+  // Group by month, e.g. "November 2026"
+  const groups = [];
+  sorted.forEach(r => {
+    const d = new Date(r.at), key = d.getFullYear() * 12 + d.getMonth();
+    let g = groups[groups.length - 1];
+    if (!g || g.key !== key) { g = { key, label: d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' }), rows: [] }; groups.push(g); }
+    g.rows.push(r);
+  });
+  $('scanList').innerHTML = groups.map(g => {
+    const paid = g.rows.filter(r => r.status === 'Paid').reduce((t, r) => t + (r.amount > 0 ? r.amount : 0), 0);
+    return `<div class="section-title">${esc(g.label)}<span class="month-count">${g.rows.length} ${g.rows.length === 1 ? 'invoice' : 'invoices'}${paid > 0 ? ' · ' + money(paid) + ' paid' : ''}</span></div>
+      <div class="card" style="padding:4px 16px">${g.rows.map(r => scanRow(r, selectMode)).join('')}</div>`;
+  }).join('');
+  $('scanTools').style.display = '';
+  $('selectBtn').textContent = selectMode ? 'Cancel' : 'Select';
+  $('selectBar').style.display = selectMode ? '' : 'none';
+  $('clearScansBtn').style.display = selectMode ? 'none' : '';
+  const n = selectedScans.size;
+  $('removeBtn').disabled = n === 0;
+  $('removeBtn').textContent = n ? `Remove selected (${n})` : 'Remove selected';
+  $('selectAllBtn').textContent = n === scans.length ? 'Select none' : 'Select all';
+}
+function toggleSelectMode() { selectMode = !selectMode; selectedScans.clear(); renderScans(); }
+function toggleScan(id) { if (selectedScans.has(id)) selectedScans.delete(id); else selectedScans.add(id); renderScans(); }
+function selectAllScans() {
+  if (selectedScans.size === scans.length) selectedScans.clear();
+  else scans.forEach(r => selectedScans.add(r.id));
+  renderScans();
+}
+function removeSelected() {
+  const n = selectedScans.size; if (!n) return;
+  scans = scans.filter(r => !selectedScans.has(r.id));
+  selectedScans.forEach(id => { delete scanThumbs[id]; });
+  selectedScans.clear(); selectMode = false;
+  persistScans(); renderScans(); renderRecentScans();
+  toast(`Removed ${n} ${n === 1 ? 'invoice' : 'invoices'}`);
+}
+function openScan(id) {
+  const r = scans.find(x => x.id === id); if (!r) return;
+  invReset();
+  go('invoice');
+  const preset = r.fields && Object.prototype.hasOwnProperty.call(r.fields, 'business') ? r.fields : null;
+  showInvoice(Object.assign({}, r.src, { thumb: scanThumbs[id] || null }), id, preset);
+}
+function clearScans() { scans = []; selectMode = false; selectedScans.clear(); persistScans(); renderScans(); renderRecentScans(); toast('Scan history cleared'); }
+
+// ======================================================= Big payment plan (rules run on the server)
+// The plan works straight away and covers big payments up to the planned amount for 7 days.
+const PLAN_LIFE = 7 * 24 * 60 * 60 * 1000;
+let plan = null;
+try { plan = JSON.parse(localStorage.getItem('bigPlan')); } catch (e) { plan = null; }
+if (plan && (typeof plan.start !== 'number' || !plan.type || !(plan.amt > 0))) plan = null;
+function savePlan() { try { if (plan) localStorage.setItem('bigPlan', JSON.stringify(plan)); else localStorage.removeItem('bigPlan'); } catch (e) { /* storage blocked */ } }
+function planState() {
+  if (!plan) return 'none';
+  if (Date.now() - plan.start < PLAN_LIFE) return 'active';
+  plan = null; savePlan(); return 'none';
+}
+const planUntil = () => new Date(plan.start + PLAN_LIFE).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+let planNotice = '', planQ = {};
+function planAns(i, v, btn) { planQ[i] = v; btn.parentNode.querySelectorAll('button').forEach(b => b.classList.remove('sel')); btn.classList.add('sel'); }
+async function startPlan() {
+  if (Object.keys(planQ).length < scamQuestions.length) { $('planErr').textContent = 'Please answer all three questions.'; return; }
+  let r;
+  try { r = await API.startPlan({ type: $('planType').value, amt: $('planAmt').value, answers: scamQuestions.map((_, i) => planQ[i]) }); }
+  catch (e) { $('planErr').textContent = e.message; return; }
+  if (r.refused) {
+    planNotice = `<div class="note bad"><b>We haven't set up your plan, to keep you safe.</b><br>Your answers suggest someone may be pressuring you to pay. Real sellers and businesses won't rush you, and banks, the ATO and police will never ask you to move money. If someone is on the phone with you, hang up.<br><br>You can still make the payment. We'll just check it first.</div>
+      <button class="btn" onclick="toast('A specialist will call you on your registered number within 10 minutes.')">Talk to us now</button>`;
+    toast('Plan not set up');
+    renderPlan(); updatePlanCard(); return;
+  }
+  if (!r.ok) { $('planErr').textContent = r.error || 'Something went wrong.'; return; }
+  plan = r.plan; planNotice = ''; savePlan();
+  toast('Big payment plan is ready');
+  renderPlan(); updatePlanCard();
+}
+function cancelPlan() { plan = null; planNotice = ''; savePlan(); toast('Big payment plan cancelled'); renderPlan(); updatePlanCard(); }
+function renderPlan() {
+  planQ = {};
+  if (planState() === 'none') {
+    $('planBody').innerHTML = planNotice + `
+      <div class="card">
+        <b>Tell us before you make a big payment</b>
+        <p class="muted" style="font-size:.84rem;line-height:1.45;margin:6px 0 0">Buying a car, paying a builder, a house deposit or a new supplier? Without a plan, big payments to someone new get a quick scam check. Tell us first, and payments up to the amount you plan go straight through for the next 7 days.</p>
+        <label for="planType">What are you paying for?</label>
+        <select id="planType"><option>Car</option><option>Building work</option><option>House deposit</option><option>New supplier</option><option>Equipment</option><option>Other</option></select>
+        <label for="planAmt">Roughly how much?</label>
+        <input id="planAmt" class="amount-input" placeholder="$0.00" inputmode="decimal" autocomplete="off">
+        <div style="margin-top:16px;font-weight:700;font-size:.9rem;color:var(--ink)">Three quick questions</div>
+        <p class="muted" style="font-size:.8rem;margin:4px 0 0">We ask everyone this before setting up a plan.</p>
+        ${scamQuestions.map((q, i) => `<div class="q">${esc(q)}<div><button onclick="planAns(${i},1,this)">Yes</button><button onclick="planAns(${i},0,this)">No</button></div></div>`).join('')}
+        <div class="err" id="planErr"></div>
+        <button class="btn" onclick="startPlan()">Set up my plan</button>
+      </div>
+      <p class="muted" style="font-size:.76rem;text-align:center">Big payments are ${money(BIG)} or more to someone you don't pay regularly. Name checks and scam reports still apply to every payment.</p>`;
+  } else {
+    $('planBody').innerHTML = `
+      <div class="card" style="text-align:center">
+        <div style="color:var(--ok);font-weight:800;font-size:1.1rem">Big payment plan ready</div>
+        <div class="muted" style="font-size:.85rem;margin-top:4px">${esc(plan.type)} · up to about ${money(plan.amt)}</div>
+        <div class="muted" style="font-size:.8rem;margin-top:8px">Ready until ${planUntil()}</div>
+      </div>
+      <div class="note info">Big payments up to this amount go through without the extra questions. We still check the name on the account and scam reports, and tell you if anything looks wrong.</div>
+      <button class="btn" onclick="startPay()">Make the payment</button>
+      <button class="btn ghost" onclick="cancelPlan()">Cancel this plan</button>`;
+  }
+}
+function updatePlanCard() {
+  const active = planState() === 'active';
+  $('timerSlot').innerHTML = active ? '<span class="timer-pill ready" title="Big payment plan ready" onclick="go(\'bigplan\')">Plan ready</span>' : '';
+  $('planCardSub').textContent = active ? `${plan.type} plan ready, up to ${money(plan.amt)}, until ${planUntil()}` : 'Buying a car or paying a builder? Let us know first.';
+}
+
+// ======================================================= Customer profile and identity (KYC), from the server's database
+const fmtDay = d => d ? new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+const cap1 = s => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
+async function loadProfile() {
+  let p;
+  try { p = await API.customer(); } catch (e) { $('kycCard').innerHTML = `<div class="muted small">${esc(e.message)}</div>`; return; }
+  $('profName').textContent = `${p.firstName} ${p.lastName}`;
+  $('profInit').textContent = initials(`${p.firstName} ${p.lastName}`);
+  $('profSince').textContent = 'Customer since ' + new Date(p.customerSince).getFullYear();
+  const k = p.kyc, verified = k.status === 'verified';
+  const resultCell = r => /pass|clear|verified/i.test(r) ? `<span style="color:var(--ok)">✓ ${esc(cap1(r))}</span>` : esc(cap1(r));
+  $('kycCard').innerHTML = `
+    <div class="verdict ${verified ? 'ok' : 'warn'}" style="margin-bottom:6px"><span class="v-ic">${verified ? '✓' : '!'}</span>
+      <div><b>${verified ? 'Identity verified' : 'Identity check pending'}</b>
+      <div>${verified ? `${esc(k.level)} identity check, last verified ${esc(fmtDay(k.verifiedAt))}. Risk rating: ${esc(k.riskRating)}.` : 'Finish verifying your identity to use every feature.'}</div></div></div>
+    <div class="chk-head">Documents</div>
+    ${k.documents.map(d => `<div class="review-row"><span>${esc(d.type)}<br><small class="muted">${esc(d.number)} · expires ${esc(fmtDay(d.expires))}</small></span><span>${resultCell(d.status)}</span></div>`).join('')}
+    <div class="chk-head">Checks</div>
+    ${k.checks.map(c => `<div class="review-row"><span>${esc(c.type)}<br><small class="muted">${esc(fmtDay(c.checkedAt))}</small></span><span>${resultCell(c.result)}</span></div>`).join('')}
+    <p class="muted small" style="margin:10px 0 0;line-height:1.4">Only customers with a verified identity can report scams, so reports from other customers can be trusted.</p>`;
+}
+
+// ======================================================= Start
+function updateClock() { $('clock').textContent = new Date().toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }).replace(/\s?[ap]m$/i, ''); }
+updateClock(); setInterval(updateClock, 30000);
+setInterval(updatePlanCard, 60000);
+render(); fillAcctSelects(); renderPlan(); updatePlanCard();
+checkServer();
+</script>
+</body>
+</html>
