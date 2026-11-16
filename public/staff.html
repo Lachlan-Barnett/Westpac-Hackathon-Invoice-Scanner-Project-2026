@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff · Bank database · Invoice Check prototype</title>
+<style>
+:root{--red:#DA1710;--ink:#181B25;--muted:#5F656D;--line:#E4E5E8;--bg:#F3F4F6;--green:#00843D;--amber:#C27500;--danger:#C80000}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+header{background:#fff;border-bottom:1px solid var(--line)}
+.hw{max-width:1400px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;gap:16px}
+.logo{font-weight:800;font-size:22px;color:var(--red)}.tag{font-size:12px;color:var(--muted);border-left:1px solid var(--line);padding-left:10px;font-weight:600}
+.ribbon{background:#2b2d33;color:#ddd;font-size:12px;text-align:center;padding:5px}
+main{max-width:1400px;margin:0 auto;padding:20px 24px}
+h1{font-size:24px;margin:0 0 4px}.sub{color:var(--muted);margin:0 0 16px}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin-bottom:14px}
+.tab{padding:10px 16px;border:0;background:none;font:inherit;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab.on{color:var(--ink);border-bottom-color:var(--red)}
+.bar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+input,select{font:inherit;border:1px solid #b5b9bf;border-radius:4px;padding:7px 9px}
+.btn{background:var(--red);color:#fff;border:0;border-radius:4px;padding:8px 14px;font-weight:700;cursor:pointer;font:inherit;font-weight:700}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid #b5b9bf}
+.wrap{background:#fff;border:1px solid var(--line);border-radius:6px;overflow:auto;max-height:62vh}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{position:sticky;top:0;background:#f7f7f8;text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:12px;color:var(--muted)}
+td{padding:8px 10px;border-bottom:1px solid #f0f0f2;white-space:nowrap;max-width:360px;overflow:hidden;text-overflow:ellipsis}
+tr:hover td{background:#fcfcfd}
+.del{color:var(--danger);cursor:pointer;border:0;background:none;font-size:16px}
+.b{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11.5px;font-weight:700}
+.g{background:#E8F5EE;color:var(--green)}.a{background:#FFF4DE;color:var(--amber)}.r{background:#FDECEC;color:var(--danger)}
+form{background:#fff;border:1px solid var(--line);border-radius:6px;padding:16px;margin-top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px 12px}
+form label{font-size:11.5px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+form h3{grid-column:1/-1;margin:0;font-size:15px}
+form .act{grid-column:1/-1;display:flex;gap:10px;align-items:center}
+.msg{font-size:13px}.ok{color:var(--green)}.err{color:var(--danger)}
+</style>
+</head>
+<body>
+<div class="ribbon">Hackathon prototype · staff view of the sample bank database (data/bank.sqlite)</div>
+<header><div class="hw"><div class="logo">Westpac</div><div class="tag">Invoice Check · Staff console</div><a href="/" style="margin-left:auto;color:var(--ink);font-weight:600">Open customer app →</a></div></header>
+<main>
+  <h1>Bank database</h1>
+  <p class="sub">The data Invoice Check verifies against: business register, KYC-linked bank accounts, scam reports, the customer&#39;s payees, invoices and transfers, and fraud cases raised from the app. Add your own rows to create new demo scenarios.</p>
+  <div class="tabs" id="tabs"></div>
+  <div class="bar"><input id="q" placeholder="Search this table…" style="width:280px"><span id="count" class="sub" style="margin:0"></span><span style="flex:1"></span><button class="btn sec" id="reset">Reset to sample data</button></div>
+  <div class="wrap"><table id="tbl"></table></div>
+  <form id="form"></form>
+</main>
+<script>
+const T = {
+  businesses: { title: "Business register (ABR)", add: "Add a business", fields: [["abn","ABN *"],["entity_name","Legal entity name *"],["trading_names","Trading name(s)"],["entity_type","Entity type",["Australian Private Company","Individual/Sole Trader","Partnership","Trust"]],["abn_status","ABN status",["Active","Cancelled"]],["abn_registered","ABN registered","date"],["gst_registered","GST registered (blank = not registered)","date"],["acn","ACN"],["address","Address"],["state","State",["QLD","NSW","VIC","SA","WA","TAS","NT","ACT"]],["postcode","Postcode"],["phone","Phone"],["website","Website"],["email_domain","Email domain"],["industry","Industry"]] },
+  bank_accounts: { title: "Bank accounts (CoP + KYC)", add: "Add a bank account", fields: [["bsb","BSB *"],["account_number","Account number *"],["bank_name","Bank",["Westpac","Commonwealth Bank","ANZ","NAB","Suncorp Bank","Bank of Queensland","St.George","Bendigo Bank","ING","Macquarie"]],["account_name","Account name *"],["account_type","Account type",["Business","Personal","Business (trust)"]],["linked_abn","Linked ABN (KYC)"],["kyc_status","KYC status",["Verified","Verified (individual)","Pending","Failed"]],["kyc_verified_on","KYC verified on","date"],["opened_on","Opened on","date"],["unique_senders_7d","Unique senders (7 days)","number"],["outflow_24h_pct","% moved out within 24h","number"]] },
+  scam_reports: { title: "Scam reports", add: "Add a scam report", fields: [["type","Type",["account","abn","email_domain","phone"]],["value","Value * (BSB+account digits, ABN, domain or phone)"],["source","Source",["Westpac Fraud team","AFCX (shared bank intelligence)","Scamwatch","Customer report (verified)"]],["reported_on","Reported on","date"],["description","Description"]] },
+  saved_payees: { title: "Saved payees", add: "Add a saved payee", fields: [["nickname","Nickname *"],["abn","ABN"],["account_name","Account name"],["bsb","BSB *"],["account_number","Account number *"],["added_on","Added on","date"]] },
+  invoices: { title: "Invoices inbox", fields: [] },
+  transfers: { title: "Transfers", fields: [] },
+  fraud_cases: { title: "Fraud cases", fields: [] },
+  verifications: { title: "Check log", fields: [] },
+  customer_accounts: { title: "Customer accounts", fields: [] },
+  settings: { title: "⚙️ API keys" }
+};
+let cur = "businesses", rows = [];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+$("tabs").innerHTML = Object.entries(T).map(([k, t]) => `<button class="tab" data-t="${k}">${t.title}</button>`).join("");
+$("tabs").onclick = e => { const b = e.target.closest("[data-t]"); if (b) load(b.dataset.t); };
+$("q").oninput = render;
+$("reset").onclick = async () => { if (!confirm("Reset the whole database to the sample data? Your added rows will be removed.")) return; await fetch("/api/db-reset", { method: "POST" }); load(cur); };
+
+async function load(t) {
+  if (t === "settings") return loadSettings();
+  document.querySelector(".bar").style.display = ""; document.querySelector(".wrap").style.display = "";
+  cur = t; document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  rows = await (await fetch("/api/db/" + t)).json(); $("q").value = ""; render(); renderForm();
+}
+function cell(k, v) {
+  if (k === "status" && ["Unpaid","Open"].includes(v)) return `<span class="b a">${esc(v)}</span>`;
+  if (k === "status" && ["Paid","Sent"].includes(v)) return `<span class="b g">${esc(v)}</span>`;
+  if (k === "status" && v === "Reported") return `<span class="b r">${esc(v)}</span>`;
+  if ((k === "level" || k === "check_level") && !["green","amber","red"].includes(v)) return esc(v);
+  if (k === "check_level") k = "level";
+  if (k === "level") return `<span class="b ${v === "green" ? "g" : v === "amber" ? "a" : "r"}">${esc(v)}</span>`;
+  if (k === "abn_status") return `<span class="b ${v === "Active" ? "g" : "r"}">${esc(v)}</span>`;
+  if (k === "kyc_status") return `<span class="b ${String(v).startsWith("Verified") ? "g" : v === "Pending" ? "a" : "r"}">${esc(v)}</span>`;
+  if (k === "gst_registered" && !v) return `<span class="b a">Not registered</span>`;
+  if ((k === "checked_at" || k === "created_at" || k === "received_at") && v) return esc(new Date(v).toLocaleString("en-AU"));
+  return esc(v);
+}
+function render() {
+  const q = $("q").value.toLowerCase();
+  const list = rows.filter(r => !q || JSON.stringify(r).toLowerCase().includes(q));
+  $("count").textContent = `${list.length} row${list.length === 1 ? "" : "s"}`;
+  if (!rows.length) { $("tbl").innerHTML = `<tr><td style="padding:20px;color:#777">No rows yet.</td></tr>`; return; }
+  const cols = Object.keys(rows[0]).filter(c => c !== "_rowid");
+  $("tbl").innerHTML = `<tr>${cols.map(c => `<th>${c.replace(/_/g, " ")}</th>`).join("")}<th></th></tr>` +
+    list.map(r => `<tr>${cols.map(c => `<td title="${esc(r[c])}">${cell(c, r[c])}</td>`).join("")}<td><button class="del" title="Delete" data-id="${r._rowid}">🗑</button></td></tr>`).join("");
+  $("tbl").querySelectorAll(".del").forEach(b => b.onclick = async () => { if (!confirm("Delete this row?")) return; await fetch(`/api/db/${cur}/${b.dataset.id}`, { method: "DELETE" }); load(cur); });
+}
+function renderForm() {
+  const t = T[cur]; if (!t.add) { $("form").style.display = "none"; return; }
+  $("form").style.display = "";
+  $("form").innerHTML = `<h3>${t.add}</h3>` + t.fields.map(([k, l, type]) => `<label>${l}${Array.isArray(type) ? `<select name="${k}">${type.map(o => `<option>${o}</option>`).join("")}</select>` : `<input name="${k}" type="${type || "text"}">`}</label>`).join("") +
+    `<div class="act"><button class="btn">Save</button><span class="msg" id="msg"></span></div>`;
+  $("form").onsubmit = async e => {
+    e.preventDefault();
+    const body = Object.fromEntries(new FormData($("form")));
+    const r = await fetch("/api/db/" + cur, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (!r.ok) { $("msg").className = "msg err"; $("msg").textContent = j.error; return; }
+    await load(cur); $("msg").className = "msg ok"; $("msg").textContent = "Saved.";
+  };
+}
+async function loadSettings() {
+  cur = "settings"; document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.t === "settings"));
+  document.querySelector(".bar").style.display = "none"; document.querySelector(".wrap").style.display = "none";
+  const s = await (await fetch("/api/settings")).json();
+  const pill = on => `<span class="b ${on ? "g" : "a"}">${on ? "ON" : "OFF"}</span>`;
+  $("form").style.display = "";
+  $("form").innerHTML = `<h3>API keys ${pill(s.ai)} AI &nbsp; ${pill(s.abrLive)} Live ABN Lookup</h3>
+    <label style="grid-column:span 2">Gemini API key — get one free at aistudio.google.com/apikey<input name="GEMINI_API_KEY" type="password" placeholder="${s.GEMINI_API_KEY || "Paste key (starts with AIza…)"}" autocomplete="off"></label>
+    <label>Gemini model<input name="GEMINI_MODEL" value="${esc(s.GEMINI_MODEL)}"></label><span></span>
+    <label>Large payment threshold ($), full check at or above this<input name="LARGE_PAYMENT_THRESHOLD" type="number" min="1" value="${s.LARGE_PAYMENT_THRESHOLD}"></label><span></span>
+    <label style="grid-column:span 2">ABR GUID (optional, live ABN Lookup) — abr.business.gov.au/Tools/WebServices<input name="ABR_GUID" type="password" placeholder="${s.ABR_GUID || "Paste GUID"}" autocomplete="off"></label>
+    <div class="act"><button class="btn">Save keys</button><span class="msg" id="msg"></span></div>
+    <p class="sub" style="grid-column:1/-1;margin:0">Keys are saved to the <b>.env</b> file on this computer and used straight away. They're never sent to the customer app. Leave a box empty to keep the current key, or type <b>-</b> to remove it.</p>`;
+  $("form").onsubmit = async e => {
+    e.preventDefault();
+    const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(new FormData($("form")))) });
+    const j = await r.json();
+    if (!r.ok) { $("msg").className = "msg err"; $("msg").textContent = j.error; return; }
+    await loadSettings(); $("msg").className = "msg ok"; $("msg").textContent = `Saved. AI is ${j.ai ? "ON" : "OFF"}, live ABN Lookup is ${j.abrLive ? "ON" : "OFF"}, full check from $${j.threshold}. Test it at /api/test-ai`;
+  };
+}
+load(location.hash === "#settings" ? "settings" : "businesses");
+</script>
+</body>
+</html>

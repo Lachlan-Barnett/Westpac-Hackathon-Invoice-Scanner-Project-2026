@@ -1,18 +1,21 @@
 {
-  "name": "westpac-scam-protect",
-  "version": "1.1.0",
-  "private": true,
-  "description": "Westpac Hackathon 2026 prototype: banking app with Scam Protect and an invoice scanner",
-  "main": "server/server.js",
+  "name": "westpac-invoice-check",
+  "version": "1.0.0",
+  "description": "Westpac Hackathon 2026 prototype - AI invoice verification before large transfers",
+  "main": "server.js",
+  "type": "commonjs",
   "scripts": {
-    "start": "node server/server.js",
-    "reset-db": "node server/db.js --reset"
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node lib/db.js"
   },
   "engines": {
-    "node": ">=22.13"
+    "node": ">=18"
   },
   "dependencies": {
-    "pdfjs-dist": "4.10.38",
-    "tesseract.js": "5.1.1"
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "sql.js": "^1.16.0"
   }
 }
