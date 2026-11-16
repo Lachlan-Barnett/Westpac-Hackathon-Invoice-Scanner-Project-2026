@@ -56,6 +56,9 @@ const T = {
   fraud_cases: { title: "Fraud cases", fields: [] },
   verifications: { title: "Check log", fields: [] },
   customer_accounts: { title: "Customer accounts", fields: [] },
+  payids: { title: "PayIDs", add: "Add a PayID", fields: [["payid","PayID * (phone, email or ABN, no spaces)"],["holder_name","Registered name *"],["payid_type","Type",["personal","business"]],["account_key","Account (BSB + account digits)"]] },
+  bpay_billers: { title: "BPAY billers", add: "Add a BPAY biller", fields: [["code","Biller code *"],["name","Biller name *"]] },
+  customer_reports: { title: "App scam reports", fields: [] },
   settings: { title: "⚙️ API keys" }
 };
 let cur = "businesses", rows = [];
@@ -130,7 +133,7 @@ async function loadSettings() {
     await loadSettings(); $("msg").className = "msg ok"; $("msg").textContent = `Saved. AI is ${j.ai ? "ON" : "OFF"}, live ABN Lookup is ${j.abrLive ? "ON" : "OFF"}, full check from $${j.threshold}. Test it at /api/test-ai`;
   };
 }
-load(location.hash === "#settings" ? "settings" : "businesses");
+load(T[location.hash.slice(1)] ? location.hash.slice(1) : "businesses");
 </script>
 </body>
 </html>

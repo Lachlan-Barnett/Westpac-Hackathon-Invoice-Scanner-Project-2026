@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#DA1710">
+<title>Westpac Business · Invoice Check prototype</title>
+<style>
+:root{
+  --red:#DA1710;--red-d:#B3120C;--red-l:#FBE8E7;--ink:#181B25;--muted:#5F656D;--line:#E6E7EA;--bg:#F4F4F6;
+  --green:#00843D;--green-bg:#E8F5EE;--amber:#B86E00;--amber-bg:#FFF4DE;--danger:#C80000;--danger-bg:#FDECEC;--ai:#4B2CA0;--ai-bg:#F4F1FF;--blue-bg:#EEF4FC;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#26282e;font-size:15px;line-height:1.4}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit;padding:0}
+input,select{font:inherit;color:inherit}
+.stage{min-height:100%;display:flex;align-items:center;justify-content:center;gap:56px;padding:28px}
+.side{color:#d7d8dc;max-width:320px}
+.side h1{color:#fff;font-size:26px;margin:0 0 8px}
+.side p{font-size:14px;color:#b5b7bd}
+.side a{color:#fff}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:12px;background:#3a3d45;color:#e6e7ea;margin:3px 4px 3px 0}
+.pill.on{background:#0f5132;color:#b9f2cf}
+.side ol{padding-left:18px;font-size:13px;color:#c7c9ce}.side li{margin-bottom:4px}
+.phone{width:390px;height:844px;background:var(--bg);border-radius:48px;overflow:hidden;position:relative;box-shadow:0 0 0 11px #0d0e11,0 0 0 13px #3a3c42,0 30px 80px rgba(0,0,0,.5);display:flex;flex-direction:column}
+@media(max-width:820px){.side{display:none}.stage{padding:0;display:block}.phone{width:100%;height:100vh;height:100dvh;border-radius:0;box-shadow:none}}
+.statusbar{height:46px;flex:0 0 46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 6px;font-weight:600;font-size:15px;color:#fff;background:var(--red);transition:background .2s,color .2s;position:relative;z-index:5}
+.statusbar.light{background:#fff;color:var(--ink)}
+.proto{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:9.5px;background:rgba(0,0,0,.35);color:#fff;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.screen{position:absolute;inset:46px 0 0 0;display:flex;flex-direction:column;background:var(--bg);transform:translateX(100%);transition:transform .28s ease;visibility:hidden}
+.screen.active{transform:none;visibility:visible}
+.screen.left{transform:translateX(-30%)}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+.appbar{flex:0 0 auto;display:flex;align-items:center;padding:8px 10px;background:#fff;border-bottom:1px solid var(--line);min-height:52px}
+.appbar h2{margin:0;font-size:17px;flex:1;text-align:center}
+.appbar .sp{width:40px}
+.back{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;line-height:1;color:var(--red)}
+.back:active{background:#f1f1f3}
+.stepper{display:flex;gap:4px;padding:10px 16px 0;background:#fff}
+.stepper i{flex:1;height:4px;border-radius:2px;background:#e3e4e7}
+.stepper i.on{background:var(--red)}
+.steptxt{background:#fff;font-size:12px;color:var(--muted);padding:6px 16px 10px;border-bottom:1px solid var(--line)}
+/* home */
+.hero{background:var(--red);color:#fff;padding:4px 20px 70px}
+.hero-top{display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:800;font-size:24px;letter-spacing:-.5px}
+.logo small{font-size:12px;font-weight:700;letter-spacing:.3px;opacity:.9;margin-left:6px;background:rgba(255,255,255,.18);padding:2px 7px;border-radius:6px;vertical-align:middle}
+.avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.greet{margin-top:16px;font-size:21px;font-weight:700;line-height:1.2}
+.greet small{display:block;font-size:13px;font-weight:400;opacity:.88;margin-bottom:2px}
+.cards{margin:-54px 16px 0;display:flex;flex-direction:column;gap:10px}
+.acc{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.acc .n{font-weight:700}.acc .no{font-size:12.5px;color:var(--muted)}
+.acc .bal{font-size:25px;font-weight:800;margin-top:6px}
+.acc .bal small{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 12px 0}
+.qa{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:600;text-align:center;position:relative}
+.qa .ico{width:54px;height:54px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.qa svg{width:25px;height:25px;stroke:var(--red)}
+.badge{position:absolute;top:-5px;right:6px;background:var(--red);color:#fff;font-size:10.5px;font-weight:800;min-width:20px;height:20px;padding:0 5px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)}
+.shield{margin:18px 16px 0;border-radius:16px;padding:14px 16px;background:#fff;display:flex;gap:12px;align-items:center;border:1px solid var(--line)}
+.shield .si{width:42px;height:42px;border-radius:12px;background:var(--green-bg);display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 42px}
+.shield b{display:block;font-size:14.5px}.shield span{font-size:12.5px;color:var(--muted)}.shield span b{display:inline;font-size:12.5px;color:var(--ink)}
+.section-t{margin:22px 20px 8px;font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between}
+.section-t a{color:var(--red);text-transform:none;letter-spacing:0;font-size:13px;cursor:pointer}
+.list{background:#fff;margin:0 16px;border-radius:16px;overflow:hidden}
+.li{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.li:last-child{border-bottom:0}
+.li:active{background:#fafafa}
+.li .t{font-weight:600;font-size:14.5px}.li .s{font-size:12.5px;color:var(--muted)}.li .mid{flex:1;min-width:0}.li .mid .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .r{margin-left:auto;font-weight:700;white-space:nowrap;text-align:right}
+.li .r small{display:block;font-weight:400;font-size:11.5px;color:var(--muted)}
+.li .chev{margin-left:auto;color:#a0a4aa;font-size:20px}
+.mono{width:40px;height:40px;border-radius:50%;background:var(--red-l);color:var(--red);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:0 0 40px}
+.thumb{width:40px;height:52px;border-radius:5px;border:1px solid var(--line);object-fit:cover;object-position:top;flex:0 0 40px;background:#fff}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:8px;margin-left:4px;vertical-align:1px}
+.tag.v{background:var(--green-bg);color:var(--green)}.tag.n{background:var(--blue-bg);color:#1f5fa8}.tag.w{background:var(--amber-bg);color:var(--amber)}.tag.r{background:var(--danger-bg);color:var(--danger)}.tag.g{background:#eceef0;color:#555}
+.tabbar{flex:0 0 auto;display:flex;background:#fff;border-top:1px solid var(--line);padding:6px 0 22px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:#8a8f96;font-weight:600}
+.tab svg{width:24px;height:24px;stroke:currentColor}
+.tab.on{color:var(--red)}
+/* generic */
+.pad{padding:18px 16px 24px}
+.h{font-size:23px;font-weight:800;margin:2px 0 6px;letter-spacing:-.2px}
+.p{color:var(--muted);font-size:14px;margin:0 0 16px}
+.search{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #d5d7db;border-radius:12px;padding:0 12px;margin-bottom:6px}
+.search input{border:0;outline:0;flex:1;padding:12px 0;font-size:15px;background:none}
+.search:focus-within{border-color:var(--red)}
+.newbiz{display:flex;align-items:center;gap:12px;width:100%;background:#fff;border:1.5px dashed #c9ccd1;border-radius:16px;padding:14px 16px;margin-top:14px;text-align:left}
+.newbiz .plus{width:40px;height:40px;border-radius:50%;background:var(--red);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;flex:0 0 40px}
+.payeehdr{display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:14px 16px;margin-bottom:14px}
+.opt{display:flex;align-items:center;gap:14px;width:100%;background:#fff;border-radius:16px;padding:16px;margin-bottom:10px;text-align:left;border:1.5px solid transparent}
+.opt:active{border-color:var(--red)}
+.opt .oi{width:46px;height:46px;border-radius:14px;background:var(--red-l);display:flex;align-items:center;justify-content:center;flex:0 0 46px}
+.opt .oi svg{width:24px;height:24px;stroke:var(--red)}
+.opt b{display:block;font-size:15.5px}.opt span{font-size:13px;color:var(--muted)}
+.opt .rec{font-size:10.5px;font-weight:800;color:var(--ai);background:var(--ai-bg);padding:2px 7px;border-radius:8px;margin-left:6px;vertical-align:2px}
+.info{display:flex;gap:10px;background:var(--blue-bg);border-radius:14px;padding:12px 14px;font-size:13px;color:#24405f;margin:4px 0 6px}
+.btn{width:100%;background:var(--red);color:#fff;border-radius:14px;padding:15px;font-weight:700;font-size:16px}
+.btn:active{background:var(--red-d)}
+.btn.sec{background:#fff;color:var(--ink);border:1.5px solid #c9ccd1}
+.btn.dark{background:var(--ink)}
+.btn:disabled{opacity:.5}
+.footer{flex:0 0 auto;padding:12px 16px 26px;background:#fff;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.note{font-size:12px;color:var(--muted);text-align:center}
+/* reading */
+.reading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.scanbox{width:220px;height:290px;border-radius:12px;overflow:hidden;position:relative;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.12);margin-bottom:22px}
+.scanbox img{width:100%;display:block}
+.scanbox .pdf{padding:110px 0;color:var(--muted)}
+.scanline{position:absolute;left:0;right:0;height:60px;background:linear-gradient(180deg,rgba(75,44,160,0),rgba(75,44,160,.35));border-bottom:2px solid var(--ai);animation:scan 1.6s ease-in-out infinite alternate}
+@keyframes scan{from{top:-60px}to{top:100%}}
+.ai-chip{display:inline-flex;align-items:center;gap:6px;background:var(--ai-bg);color:var(--ai);font-size:12px;font-weight:800;padding:4px 10px;border-radius:12px}
+/* details */
+.banner{display:flex;gap:10px;align-items:flex-start;border-radius:14px;padding:12px 14px;font-size:13.5px;margin-bottom:12px}
+.banner.known{background:var(--green-bg);color:#0b4d2a}.banner.new{background:var(--blue-bg);color:#1f3f66}.banner.bad{background:var(--danger-bg);color:#7a0d0d}.banner.warn{background:var(--amber-bg);color:#6b4500}
+.banner b{display:block;font-size:14px}
+.amountcard{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;display:flex;gap:12px;align-items:center}
+.amountcard img{width:54px;height:70px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line)}
+.amt{display:flex;align-items:baseline;gap:2px;font-size:30px;font-weight:800}
+.amt input{border:0;outline:0;width:100%;font-size:30px;font-weight:800;background:none;padding:0}
+.lbl{font-size:12px;color:var(--muted)}
+.form{background:#fff;border-radius:16px;overflow:hidden;margin-bottom:12px}
+.fr{display:flex;align-items:center;border-bottom:1px solid var(--line);padding:0 16px}
+.fr:last-child{border-bottom:0}
+.fr label{flex:0 0 118px;font-size:13px;color:var(--muted);padding:13px 0}
+.fr input,.fr select{flex:1;border:0;font-size:14.5px;font-weight:600;text-align:right;padding:13px 0;min-width:0;background:none;outline:0}
+.fr input:focus{color:var(--red)}
+.formtitle{font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:16px 4px 8px}
+details.more{background:#fff;border-radius:16px;margin-bottom:12px}
+details.more summary{padding:13px 16px;font-weight:600;font-size:14px;cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+details.more summary::after{content:"›";transform:rotate(90deg);color:#999}
+details.more[open] summary{border-bottom:1px solid var(--line)}
+.check{display:flex;gap:10px;align-items:center;background:#fff;border-radius:14px;padding:12px 16px;font-size:14px;margin-bottom:12px}
+.check input{width:20px;height:20px;accent-color:var(--red)}
+/* results */
+.verdict{border-radius:18px;padding:20px;text-align:center;margin-bottom:12px}
+.verdict.green{background:var(--green-bg)}.verdict.amber{background:var(--amber-bg)}.verdict.red{background:var(--danger-bg)}
+.vicon{width:64px;height:64px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:800}
+.green .vicon{background:var(--green)}.amber .vicon{background:var(--amber)}.red .vicon{background:var(--danger)}
+.verdict h3{margin:0;font-size:22px}
+.verdict p{margin:4px 0 0;font-size:13.5px;color:#444}
+.meter{height:8px;background:rgba(0,0,0,.08);border-radius:4px;margin:12px auto 0;max-width:220px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:4px;transition:width 1s ease}
+.green .meter i{background:var(--green)}.amber .meter i{background:var(--amber)}.red .meter i{background:var(--danger)}
+.sc{font-size:12.5px;color:var(--muted);margin-top:6px}
+.bubble{background:var(--ai-bg);border-radius:16px;padding:13px 15px;font-size:14px;margin-bottom:14px}
+.bubble b{color:var(--ai);display:block;font-size:11.5px;margin-bottom:3px;letter-spacing:.3px}
+.why{font-size:12.5px;color:var(--muted);margin:0 4px 10px}
+.checks{background:#fff;border-radius:16px;padding:0 16px;list-style:none;margin:0}
+.checks li{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.checks li:last-child{border-bottom:0}
+.ic{flex:0 0 26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;margin-top:1px}
+.ic.wait{background:#eceef0;color:#9a9ea4}
+.ic.pend{background:#fff;border:3px solid #e2e3e6;border-top-color:var(--red);animation:spin .8s linear infinite}
+.ic.pass{background:var(--green)}.ic.warn{background:var(--amber)}.ic.fail{background:var(--danger)}.ic.info{background:#7a8088}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ct{font-weight:700;font-size:14px}
+.cd{font-size:12.5px;color:var(--muted);margin-top:2px}
+.src{font-size:11px;color:#9a9ea4;margin-top:3px}
+.spin{width:46px;height:46px;border-radius:50%;border:4px solid #e2e3e6;border-top-color:var(--red);animation:spin .8s linear infinite;margin:50px auto 14px}
+details.case{background:#fff;border-radius:16px;padding:12px 16px;margin-top:12px;font-size:13px}
+details.case summary{font-weight:700;cursor:pointer}
+pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;background:#f6f6f8;padding:10px;border-radius:8px;margin:10px 0 0}
+/* review + done */
+.review{background:#fff;border-radius:16px;padding:6px 16px;margin-bottom:12px}
+.rr{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+.rr:last-child{border-bottom:0}
+.rr span{color:var(--muted)}.rr b{text-align:right}
+.big{font-size:34px;font-weight:800;text-align:center;margin:8px 0 2px}
+.done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+.done .vicon{width:84px;height:84px;font-size:40px}
+.done.ok .vicon{background:var(--green)}.done.rep .vicon{background:var(--ink)}
+.done .review{width:100%;text-align:left;margin-top:16px}
+.toast{position:absolute;left:16px;right:16px;bottom:100px;background:var(--ink);color:#fff;padding:12px 14px;border-radius:12px;font-size:13.5px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:up .25s ease}
+@keyframes up{from{transform:translateY(20px);opacity:0}}
+.empty{padding:20px;text-align:center;color:var(--muted);font-size:13.5px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="side">
+    <h1>Invoice Check</h1>
+    <p>Westpac Innovation &amp; Coding Competition 2026 prototype for <b>business-to-business payments</b>. Large payments are verified against the business register, KYC records, bank data and AI before any money moves. Small payments go straight through, unless the pattern looks wrong.</p>
+    <div id="sideStatus"></div>
+    <ol>
+      <li>Pay a business → pick a bill, a saved business or a new one</li>
+      <li>Scan, upload or type the details</li>
+      <li>≥ <span class="thr">$5,000</span>: full check · smaller: straight through</li>
+      <li>Red = blocked · call the fraud team or report it</li>
+    </ol>
+    <p><a href="/staff.html" target="_blank">Staff console (database) →</a><br><a href="/staff.html#settings" target="_blank">⚙️ API keys &amp; settings →</a></p>
+  </div>
+
+  <div class="phone">
+    <div class="statusbar" id="statusbar"><span id="clock">9:41</span><span class="proto">Hackathon prototype · demo data</span><span>●●●● 5G ▮</span></div>
+
+    <!-- HOME -->
+    <section class="screen active" id="home">
+      <div class="scroll">
+        <div class="hero">
+          <div class="hero-top"><div class="logo">Westpac<small>BUSINESS</small></div><div class="avatar">CC</div></div>
+          <div class="greet"><small id="greetTime">Good afternoon</small><span id="bizName">Coomera Coffee Roasters</span></div>
+        </div>
+        <div class="cards" id="accounts"></div>
+        <div class="quick">
+          <button class="qa" data-go="pay"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>Pay a business</button>
+          <button class="qa" id="qaBills"><span class="badge hidden" id="billBadge">0</span><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></div>Bills</button>
+          <button class="qa" data-toast="Transfers between your own accounts aren't part of this prototype."><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg></div>Transfer</button>
+          <button class="qa" data-toast="Card controls aren't part of this prototype."><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></div>Cards</button>
+        </div>
+        <div class="shield"><div class="si">🛡️</div><div><b>Invoice Check is on</b><span>Payments of <b class="thr">$5,000</b> or more are verified before they leave your account.</span></div></div>
+        <div class="section-t">Recent payments</div>
+        <div class="list" id="recent"></div>
+        <div style="height:22px"></div>
+      </div>
+      <nav class="tabbar">
+        <button class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+        <button class="tab" data-go="pay"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Pay</button>
+        <button class="tab" data-toast="Not part of this prototype."><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>Cards</button>
+        <button class="tab" data-toast="Not part of this prototype."><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>Security</button>
+        <button class="tab" data-toast="Not part of this prototype."><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>More</button>
+      </nav>
+    </section>
+
+    <!-- PAY A BUSINESS -->
+    <section class="screen" id="pay">
+      <div class="appbar"><button class="back" data-back>‹</button><h2>Pay a business</h2><span class="sp"></span></div>
+      <div class="scroll"><div class="pad">
+        <div class="search"><span>🔍</span><input id="q" placeholder="Search business name or ABN"></div>
+        <button class="newbiz" id="btnNew"><span class="plus">+</span><span><b style="display:block">Pay a new business</b><span class="lbl">We'll check them before you pay</span></span></button>
+        <div class="section-t" style="margin-left:4px;margin-right:4px" id="billsT">Bills to pay</div>
+        <div class="list" style="margin:0" id="bills"></div>
+        <div class="section-t" style="margin-left:4px">Your businesses</div>
+        <div class="list" style="margin:0" id="payees"></div>
+      </div></div>
+    </section>
+
+    <!-- METHOD -->
+    <section class="screen" id="method">
+      <div class="appbar"><button class="back" data-back>‹</button><h2>Payment details</h2><span class="sp"></span></div>
+      <div class="stepper"><i class="on"></i><i class="on"></i><i></i><i></i></div><div class="steptxt">Step 2 of 4 · How would you like to add the details?</div>
+      <div class="scroll"><div class="pad">
+        <div class="payeehdr" id="mPayee"></div>
+        <button class="opt" id="mScan"><span class="oi"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span><b>Scan the invoice <span class="rec">RECOMMENDED</span></b><span>Take a photo. AI fills everything in and checks it.</span></span></button>
+        <button class="opt" id="mUpload"><span class="oi"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></span><span><b>Upload an invoice</b><span>PDF or image from your email or files</span></span></button>
+        <button class="opt" id="mManual"><span class="oi"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></span><span><b>Enter details manually</b><span>Type the ABN, BSB, account and amount</span></span></button>
+        <input type="file" id="fileCam" accept="image/*" capture="environment" class="hidden">
+        <input type="file" id="fileAny" accept="image/*,application/pdf" class="hidden">
+        <div class="info">🛡️ <span>Payments of <b class="thr">$5,000</b> or more are automatically checked against the business register, KYC records and known scams. Scanning the invoice lets us also check the invoice itself.</span></div>
+      </div></div>
+    </section>
+
+    <!-- READING -->
+    <section class="screen" id="reading">
+      <div class="appbar"><button class="back" data-back>‹</button><h2>Reading invoice</h2><span class="sp"></span></div>
+      <div class="reading">
+        <div class="scanbox"><div id="scanImg"></div><div class="scanline"></div></div>
+        <span class="ai-chip" id="readChip">✨ AI is reading your invoice</span>
+        <p class="p" style="margin-top:10px">Finding the business, ABN, bank details and totals…</p>
+      </div>
+    </section>
+
+    <!-- DETAILS -->
+    <section class="screen" id="details">
+      <div class="appbar"><button class="back" data-back>‹</button><h2>Check details</h2><span class="sp"></span></div>
+      <div class="stepper"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><div class="steptxt">Step 3 of 4 · Make sure these match the invoice</div>
+      <div class="scroll"><div class="pad">
+        <div id="dWarn"></div>
+        <div id="dBanner"></div>
+        <div class="amountcard"><img id="dThumb" alt="" class="hidden"><div style="flex:1"><div class="lbl">Amount to pay</div><div class="amt">$<input id="f_amount_due" inputmode="decimal" placeholder="0.00"></div><div class="lbl" id="dLimit"></div></div></div>
+        <div class="formtitle">Paying</div>
+        <div class="form">
+          <div class="fr"><label for="f_business_name">Business</label><input id="f_business_name" placeholder="Business name"></div>
+          <div class="fr"><label for="f_abn">ABN</label><input id="f_abn" inputmode="numeric" placeholder="11 digits"></div>
+          <div class="fr"><label for="f_account_name">Account name</label><input id="f_account_name"></div>
+          <div class="fr"><label for="f_bsb">BSB</label><input id="f_bsb" inputmode="numeric" placeholder="000-000"></div>
+          <div class="fr"><label for="f_account_number">Account no.</label><input id="f_account_number" inputmode="numeric"></div>
+          <div class="fr"><label for="f_reference">Reference</label><input id="f_reference" placeholder="e.g. invoice number"></div>
+        </div>
+        <div class="formtitle">From</div>
+        <div class="form"><div class="fr"><label for="fromId">Account</label><select id="fromId"></select></div></div>
+        <details class="more" id="invMore"><summary>Invoice details (from the scan)</summary>
+          <div class="form" style="margin:0;border-radius:0 0 16px 16px">
+            <div class="fr"><label for="f_invoice_number">Invoice no.</label><input id="f_invoice_number"></div>
+            <div class="fr"><label for="f_subtotal">Subtotal ex GST</label><input id="f_subtotal" inputmode="decimal"></div>
+            <div class="fr"><label for="f_gst">GST</label><input id="f_gst" inputmode="decimal"></div>
+            <div class="fr"><label for="f_total">Invoice total</label><input id="f_total" inputmode="decimal"></div>
+            <div class="fr"><label for="f_email">Email</label><input id="f_email"></div>
+            <div class="fr"><label for="f_phone">Phone</label><input id="f_phone"></div>
+          </div>
+        </details>
+        <label class="check hidden" id="saveRow"><input type="checkbox" id="savePayee" checked> Save this business to my payees</label>
+      </div></div>
+      <div class="footer"><button class="btn" id="btnContinue">Continue</button></div>
+    </section>
+
+    <!-- REVIEW (small payments) -->
+    <section class="screen" id="review">
+      <div class="appbar"><button class="back" data-back>‹</button><h2>Review payment</h2><span class="sp"></span></div>
+      <div class="stepper"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="steptxt">Step 4 of 4 · Confirm and pay</div>
+      <div class="scroll"><div class="pad">
+        <div class="big" id="rAmt"></div><p class="p" style="text-align:center" id="rTo"></p>
+        <div class="review" id="rRows"></div>
+        <div class="info">✓ <span id="rNote"></span></div>
+      </div></div>
+      <div class="footer"><button class="btn" id="btnQuickPay">Pay now</button></div>
+    </section>
+
+    <!-- CHECK RESULT -->
+    <section class="screen" id="verify">
+      <div class="appbar"><button class="back" data-back>‹</button><h2 id="vTitle">Invoice Check</h2><span class="sp"></span></div>
+      <div class="scroll"><div class="pad">
+        <div id="vLoading"><div class="spin"></div><p class="p" style="text-align:center"><b style="color:var(--ink)">Checking this payment…</b><br>Business register · KYC · bank records · scam reports · AI</p></div>
+        <div id="verdict"></div>
+        <div id="bubble"></div>
+        <div class="why" id="why"></div>
+        <ul class="checks hidden" id="checks"></ul>
+        <div id="case"></div>
+      </div></div>
+      <div class="footer hidden" id="vFooter"></div>
+    </section>
+
+    <!-- DONE -->
+    <section class="screen" id="done">
+      <div class="scroll"><div class="done" id="doneBody"></div></div>
+      <div class="footer"><button class="btn sec" id="btnHome">Back to home</button></div>
+    </section>
+
+    <div id="toastBox"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = n => "$" + Number(n || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const digits = s => String(s || "").replace(/\D/g, "");
+const fmtBsb = b => { const d = digits(b); return d.length === 6 ? d.slice(0, 3) + "-" + d.slice(3) : b || ""; };
+const fmtAcc = a => { const d = digits(a); return d.length === 8 ? d.slice(0, 4) + " " + d.slice(4) : d; };
+const fmtAbn = a => { const d = digits(a); return d.length === 11 ? `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 8)} ${d.slice(8)}` : a || ""; };
+const initials = n => String(n || "?").replace(/pty|ltd|the/gi, "").trim().split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const api = async (url, opts) => { const r = await fetch(url, opts); const j = await r.json(); if (!r.ok) throw new Error(j.error || "Something went wrong"); return j; };
+const postJSON = (url, body) => api(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+let status = {}, home = {}, payees = [], bills = [];
+let ctx = {};   // { payee, invoiceId, preview, mime, source, fields, assess }
+
+/* ---------- navigation ---------- */
+const stack = ["home"];
+const LIGHT = s => s !== "home";
+function show(id) { const el = $(id); el.classList.remove("left"); el.classList.add("active"); $("statusbar").classList.toggle("light", LIGHT(id)); el.querySelector(".scroll")?.scrollTo(0, 0); }
+function go(id, replace = false) {
+  const cur = stack[stack.length - 1]; if (cur === id) return;
+  $(cur).classList.remove("active"); $(cur).classList.add("left");
+  if (replace) { stack.pop(); $(cur).classList.remove("left"); }
+  stack.push(id); show(id);
+}
+function back() {
+  if (stack.length < 2) return;
+  const cur = stack.pop(); $(cur).classList.remove("active", "left");
+  const prev = stack[stack.length - 1]; $(prev).classList.remove("left"); $(prev).classList.add("active"); $("statusbar").classList.toggle("light", LIGHT(prev));
+}
+function goHome() { stack.splice(1).forEach(id => $(id).classList.remove("active", "left")); show("home"); loadHome(); }
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-go]"); if (g) { if (g.dataset.go === "pay") openPay(); else go(g.dataset.go); }
+  if (e.target.closest("[data-back]")) back();
+  const t = e.target.closest("[data-toast]"); if (t) toast(t.dataset.toast);
+});
+function toast(m) { const t = document.createElement("div"); t.className = "toast"; t.textContent = m; $("toastBox").appendChild(t); setTimeout(() => t.remove(), 4000); }
+
+/* ---------- boot / home ---------- */
+(function clock() { const d = new Date(); $("clock").textContent = d.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", hour12: false }); const h = d.getHours(); $("greetTime").textContent = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; setTimeout(clock, 30000); })();
+async function loadStatus() {
+  status = await api("/api/status");
+  document.querySelectorAll(".thr").forEach(e => e.textContent = money(status.threshold).replace(".00", ""));
+  $("sideStatus").innerHTML = `<span class="pill ${status.ai ? "on" : ""}">AI: ${status.ai ? "Live · " + esc(status.model) : "Demo mode"}</span><span class="pill ${status.abrLive ? "on" : ""}">ABR: ${status.abrLive ? "Live register" : "Bank database"}</span><span class="pill on">DB: ${status.db.businesses} businesses · ${status.db.accounts} accounts · ${status.db.invoices} invoices</span>`;
+}
+async function loadHome() {
+  home = await api("/api/home");
+  $("bizName").textContent = home.customer.short;
+  $("accounts").innerHTML = home.accounts.map(a => `<div class="acc"><div class="n">${esc(a.name)}</div><div class="no">${fmtBsb(a.bsb)} ${fmtAcc(a.account_number)}</div><div class="bal">${money(a.balance)}<small>available</small></div></div>`).join("");
+  $("recent").innerHTML = home.recent.length ? home.recent.map(t => `<div class="li"><div class="mono">${initials(t.payee)}</div><div><div class="t">${esc(t.payee)}</div><div class="s">${new Date(t.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" })} · ${esc(t.reference || "")}${t.check_level && t.check_level !== "not needed" ? ` · <span class="tag ${t.check_level === "green" ? "v" : "w"}">${t.check_level === "green" ? "✓ Verified" : "Confirmed"}</span>` : ""}</div></div><div class="r">−${money(t.amount)}</div></div>`).join("") : `<div class="empty">No payments yet</div>`;
+  $("billBadge").textContent = home.unpaid; $("billBadge").classList.toggle("hidden", !home.unpaid);
+}
+loadStatus().then(loadHome).catch(() => toast("Can't reach the server. Is npm start running?"));
+$("qaBills").onclick = () => openPay(true);
+
+/* ---------- pay a business ---------- */
+async function openPay(scrollToBills) {
+  go("pay");
+  [payees, bills] = await Promise.all([api("/api/payees"), api("/api/invoices")]);
+  $("q").value = ""; renderPay();
+  if (scrollToBills) $("billsT").scrollIntoView({ behavior: "smooth" });
+}
+function renderPay() {
+  const q = $("q").value.toLowerCase().replace(/\s/g, "");
+  const match = (...v) => !q || v.some(x => String(x || "").toLowerCase().replace(/\s/g, "").includes(q));
+  const open = bills.filter(b => b.status === "Unpaid" && match(b.business_name, b.abn, b.invoice_number));
+  $("bills").innerHTML = open.length ? open.map(b => `<button class="li" data-bill="${b.id}"><img class="thumb" src="/samples/${b.image}" alt=""><div class="mid"><div class="t">${esc(b.business_name)}</div><div class="s">${esc(b.invoice_number)} · ${esc(b.received_from)}</div><div class="s" style="font-size:11.5px;color:#8a8f96">${esc(b.scenario)}</div></div><div class="r">${money(b.amount_due)}<small>${b.amount_due >= status.threshold ? "Will be checked" : "Quick pay"}</small></div></button>`).join("") : `<div class="empty">${q ? "No bills match" : "All bills paid 🎉"}</div>`;
+  const ps = payees.filter(p => match(p.nickname, p.abn, p.entity_name));
+  $("payees").innerHTML = ps.length ? ps.map(p => `<button class="li" data-payee="${p.id}"><div class="mono">${initials(p.nickname)}</div><div><div class="t">${esc(p.nickname)}${p.kyc_status === "Verified" ? '<span class="tag v">✓ Verified</span>' : ""}</div><div class="s">ABN ${fmtAbn(p.abn)} · ${fmtBsb(p.bsb)} ${fmtAcc(p.account_number)}</div></div><span class="chev">›</span></button>`).join("") : `<div class="empty">No saved businesses match</div>`;
+  $("bills").querySelectorAll("[data-bill]").forEach(b => b.onclick = () => { const bill = bills.find(x => x.id == b.dataset.bill); ctx = { invoiceId: bill.id, preview: "/samples/" + bill.image, mime: "image/png", payee: payees.find(p => p.abn === bill.abn) || null }; startExtract(); });
+  $("payees").querySelectorAll("[data-payee]").forEach(b => b.onclick = () => { ctx = { payee: payees.find(p => p.id == b.dataset.payee) }; openMethod(); });
+}
+$("q").oninput = renderPay;
+$("btnNew").onclick = () => { ctx = { payee: null }; openMethod(); };
+
+/* ---------- method ---------- */
+function openMethod() {
+  const p = ctx.payee;
+  $("mPayee").innerHTML = p ? `<div class="mono">${initials(p.nickname)}</div><div><div class="t" style="font-weight:700">${esc(p.nickname)} <span class="tag v">Saved business</span></div><div class="lbl">ABN ${fmtAbn(p.abn)} · ${fmtBsb(p.bsb)} ${fmtAcc(p.account_number)}</div></div>`
+    : `<div class="mono" style="background:var(--blue-bg);color:#1f5fa8">+</div><div><div class="t" style="font-weight:700">New business <span class="tag n">First payment</span></div><div class="lbl">We'll look them up and verify them before you pay</div></div>`;
+  go("method");
+}
+$("mScan").onclick = () => $("fileCam").click();
+$("mUpload").onclick = () => $("fileAny").click();
+["fileCam", "fileAny"].forEach(id => $(id).onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  ctx.file = f; ctx.preview = URL.createObjectURL(f); ctx.mime = f.type; ctx.invoiceId = null; startExtract();
+});
+$("mManual").onclick = () => {
+  const p = ctx.payee;
+  ctx.source = "manual"; ctx.preview = null;
+  ctx.fields = p ? { business_name: p.entity_name || p.nickname, abn: p.abn, account_name: p.account_name, bsb: p.bsb, account_number: p.account_number } : {};
+  openDetails();
+};
+
+/* ---------- reading an invoice ---------- */
+async function startExtract() {
+  $("scanImg").innerHTML = ctx.mime === "application/pdf" ? `<div class="pdf">📄 PDF invoice</div>` : `<img src="${ctx.preview}" alt="">`;
+  $("readChip").textContent = status.ai ? "✨ AI is reading your invoice" : "✨ Reading invoice (demo mode)";
+  go("reading");
+  const slow = setTimeout(() => { $("readChip").textContent = "⏳ Still reading… the AI service is slow right now"; }, 15000);
+  const fd = new FormData();
+  if (ctx.invoiceId) fd.append("invoiceId", ctx.invoiceId);
+  else fd.append("invoice", await shrink(ctx.file), ctx.file.name.replace(/\.(png|jpe?g|webp|heic)$/i, "") + (ctx.file.type.startsWith("image/") ? ".jpg" : ""));
+  try {
+    const [j] = await Promise.all([api("/api/extract", { method: "POST", body: fd }), sleep(1300)]);
+    ctx.fields = j.fields || {}; ctx.source = j.source; ctx.model = j.model; ctx.warning = j.warning;
+    openDetails(true);
+  } catch (e) { back(); toast(e.message); }
+  finally { clearTimeout(slow); }
+}
+async function shrink(file) {   // phone photos can be 5-10 MB: shrink to 1600px JPEG before upload
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const img = await createImageBitmap(file);
+    const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+    if (k === 1 && file.size < 1.5e6) return file;
+    const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    return (await new Promise(r => c.toBlob(r, "image/jpeg", 0.85))) || file;
+  } catch { return file; }
+}
+
+/* ---------- details ---------- */
+const F = ["amount_due", "business_name", "abn", "account_name", "bsb", "account_number", "reference", "invoice_number", "subtotal", "gst", "total", "email", "phone"];
+const NUM = ["amount_due", "subtotal", "gst", "total"];
+async function openDetails(fromReading) {
+  const f = ctx.fields || {};
+  F.forEach(k => { let v = f[k] ?? ""; if (NUM.includes(k) && v !== "" && Number(v)) v = Number(v).toFixed(2); if (k === "abn") v = fmtAbn(v); if (k === "bsb") v = fmtBsb(v); if (k === "account_number") v = fmtAcc(v); $("f_" + k).value = v || ""; });
+  if (!f.reference && f.invoice_number) $("f_reference").value = f.invoice_number;
+  $("dWarn").innerHTML = ctx.warning ? `<div class="banner warn">⚠️ <span>${esc(ctx.warning)}</span></div>` : ctx.source === "ai" ? `<div class="banner new" style="background:var(--ai-bg);color:var(--ai)">✨ <span><b>Filled in by AI</b>Read from your invoice by ${esc(ctx.model || "AI")}. Please check it matches.</span></div>` : ctx.source === "demo" ? `<div class="banner new" style="background:var(--ai-bg);color:var(--ai)">✨ <span><b>Filled in from the invoice</b>Demo mode: add a Gemini key to read any invoice live.</span></div>` : "";
+  $("dThumb").classList.toggle("hidden", !ctx.preview || ctx.mime === "application/pdf"); if (ctx.preview) $("dThumb").src = ctx.preview;
+  $("invMore").classList.toggle("hidden", ctx.source === "manual"); $("invMore").open = false;
+  $("fromId").innerHTML = home.accounts.map(a => `<option value="${a.id}">${esc(a.name)} · ${money(a.balance)}</option>`).join("");
+  updateLimit(); go("details", !!fromReading);
+  await lookupBanner();
+}
+function updateLimit() {
+  const a = parseFloat($("f_amount_due").value) || 0;
+  $("dLimit").innerHTML = !a ? `Payments of ${money(status.threshold)} or more are checked automatically` : a >= status.threshold ? `🛡️ Over ${money(status.threshold).replace(".00", "")}, so we'll run a full check` : `Under ${money(status.threshold).replace(".00", "")}, so no extra checks needed`;
+}
+$("f_amount_due").oninput = updateLimit;
+let lookupTimer;
+$("f_abn").oninput = () => { clearTimeout(lookupTimer); lookupTimer = setTimeout(lookupBanner, 500); };
+async function lookupBanner() {
+  const abn = digits($("f_abn").value);
+  if (abn.length !== 11) { $("dBanner").innerHTML = abn.length ? `<div class="banner new">ℹ️ <span>Enter the full 11-digit ABN and we'll look the business up.</span></div>` : ""; $("saveRow").classList.add("hidden"); return; }
+  try {
+    const r = await api("/api/lookup?abn=" + abn);
+    const b = r.business, src = b?.source === "live" ? "Australian Business Register" : "business register";
+    if (!r.valid) $("dBanner").innerHTML = `<div class="banner bad">✕ <span><b>This ABN isn't valid</b>It fails the official ABN check. Double-check the invoice.</span></div>`;
+    else if (r.saved) $("dBanner").innerHTML = `<div class="banner known">✓ <span><b>${esc(r.saved.nickname)} is one of your saved businesses</b>Saved bank details: ${fmtBsb(r.saved.bsb)} ${fmtAcc(r.saved.account_number)}</span></div>`;
+    else if (b && b.abn_status === "Active") $("dBanner").innerHTML = `<div class="banner new">🆕 <span><b>New business: ${esc(b.trading_names?.split(",")[0] || b.entity_name)}</b>Found on the ${src}: ${esc(b.entity_name)} · ${esc(b.entity_type || "")} · Active</span></div>`;
+    else if (b) $("dBanner").innerHTML = `<div class="banner bad">✕ <span><b>${esc(b.entity_name)}: ABN ${esc(b.abn_status)}</b>This business's ABN is no longer active.</span></div>`;
+    else $("dBanner").innerHTML = `<div class="banner warn">⚠️ <span><b>Business not found</b>We couldn't find this ABN on the ${src}.</span></div>`;
+    if (b && !r.saved && !$("f_business_name").value) $("f_business_name").value = b.trading_names?.split(",")[0] || b.entity_name;
+    $("saveRow").classList.toggle("hidden", !!r.saved || !r.valid);
+  } catch { }
+}
+$("btnContinue").onclick = async () => {
+  const fields = { ...(ctx.fields || {}) };
+  F.forEach(k => fields[k] = $("f_" + k).value);
+  ctx.fields = fields; ctx.fromId = $("fromId").value; ctx.save = !$("saveRow").classList.contains("hidden") && $("savePayee").checked;
+  const btn = $("btnContinue"); btn.disabled = true; btn.textContent = "Checking…";
+  try {
+    const amount = parseFloat(fields.amount_due) || 0;
+    if (amount >= status.threshold) { prepVerify(); go("verify"); }
+    const a = await postJSON("/api/assess", { fields, invoiceId: ctx.invoiceId || null });
+    ctx.assess = a;
+    if (a.mode === "quick") { openReview(); }
+    else { if (stack[stack.length - 1] !== "verify") { prepVerify(); go("verify"); } await showChecks(a); }
+  } catch (e) { toast(e.message); if (stack[stack.length - 1] === "verify") back(); }
+  finally { btn.disabled = false; btn.textContent = "Continue"; }
+};
+
+/* ---------- small payment: review & pay ---------- */
+function openReview() {
+  const f = ctx.fields, a = ctx.assess, from = home.accounts.find(x => x.id == ctx.fromId);
+  $("rAmt").textContent = a.amountText; $("rTo").textContent = "to " + (f.business_name || f.account_name);
+  $("rRows").innerHTML = [["To", f.business_name || f.account_name], ["ABN", fmtAbn(f.abn) || "—"], ["BSB / Account", `${fmtBsb(f.bsb)} · ${fmtAcc(f.account_number)}`], ["Reference", f.reference || "—"], ["From", from ? `${from.name}` : ""], ["When", "Now (Osko)"]].map(([k, v]) => `<div class="rr"><span>${k}</span><b>${esc(v)}</b></div>`).join("");
+  $("rNote").textContent = `This payment is under ${money(a.threshold).replace(".00", "")} and nothing looks unusual, so no extra checks are needed.`;
+  go("review");
+}
+$("btnQuickPay").onclick = () => pay(false);
+
+/* ---------- large payment: Invoice Check ---------- */
+function prepVerify() {
+  $("vTitle").textContent = "Invoice Check"; $("vLoading").classList.remove("hidden");
+  ["verdict", "bubble", "why", "case"].forEach(id => $(id).innerHTML = ""); $("checks").classList.add("hidden"); $("vFooter").classList.add("hidden");
+}
+async function showChecks(a) {
+  $("vLoading").classList.add("hidden");
+  $("why").textContent = a.reason;
+  const ul = $("checks"); ul.classList.remove("hidden");
+  ul.innerHTML = a.checks.map((c, i) => `<li id="c${i}"><div class="ic wait">${i + 1}</div><div><div class="ct" style="color:var(--muted)">${esc(c.label)}</div></div></li>`).join("");
+  for (let i = 0; i < a.checks.length; i++) {
+    const li = $("c" + i), c = a.checks[i];
+    li.querySelector(".ic").className = "ic pend"; li.querySelector(".ic").textContent = "";
+    li.querySelector(".ct").textContent = c.label + "…"; li.querySelector(".ct").style.color = "";
+    await sleep(380);
+    li.innerHTML = `<div class="ic ${c.status}">${{ pass: "✓", warn: "!", fail: "✕", info: "i" }[c.status]}</div><div><div class="ct">${esc(c.title)}</div><div class="cd">${esc(c.detail)}</div><div class="src">${esc(c.source)}</div></div>`;
+  }
+  const H = { green: ["✓", "Safe to pay", "Everything checks out."], amber: ["!", "Check before you pay", "Confirm with the business before sending money."], red: ["✕", "Payment stopped", "This looks like a scam. We haven't sent any money."] }[a.level];
+  $("vTitle").textContent = "Invoice Check result";
+  $("verdict").innerHTML = `<div class="verdict ${a.level}"><div class="vicon">${H[0]}</div><h3>${H[1]}</h3><p>${H[2]}</p><div class="meter"><i style="width:0"></i></div><div class="sc">Trust score <b>${a.score}</b>/100 · ${a.amountText} to ${esc(a.payee)}</div></div>`;
+  setTimeout(() => { const m = $("verdict").querySelector(".meter i"); if (m) m.style.width = a.score + "%"; }, 60);
+  $("bubble").innerHTML = `<div class="bubble"><b>✨ INVOICE CHECK${a.summarySource === "ai" ? " · AI" : ""}</b>${esc(a.summary)}</div>`;
+  $("verify").querySelector(".scroll").scrollTo({ top: 0, behavior: "smooth" });
+  const f = $("vFooter"); f.classList.remove("hidden");
+  if (a.level === "green") f.innerHTML = `<button class="btn" id="bPay">Pay ${a.amountText}</button>`;
+  if (a.level === "amber") f.innerHTML = `<button class="btn dark" id="bCall">📞 Call ${esc(a.payee)}</button><button class="btn sec" id="bPay">I've confirmed, pay ${a.amountText}</button><button class="note" id="bReport" style="text-decoration:underline">Something's not right? Report it</button>`;
+  if (a.level === "red") {
+    f.innerHTML = `<button class="btn" id="bCallback">📞 Talk to our fraud team</button><button class="btn sec" id="bReport">Report this transfer</button><div class="note">Red-flagged payments can't be sent from the app.</div>`;
+    $("case").innerHTML = `<details class="case"><summary>What we'll share with the fraud team</summary><pre>${esc(a.caseSummary)}</pre></details>`;
+  }
+  if ($("bPay")) $("bPay").onclick = () => pay(a.level === "amber");
+  if ($("bCall")) $("bCall").onclick = () => toast(`Calling ${a.payee} on ${a.payeePhone || "their listed number"}: the number from the business register, not the invoice.`);
+  if ($("bReport")) $("bReport").onclick = () => report("report");
+  if ($("bCallback")) $("bCallback").onclick = () => report("callback");
+}
+
+/* ---------- pay / report ---------- */
+async function pay(confirmed) {
+  try {
+    const r = await postJSON("/api/pay", { id: ctx.assess.id, confirmed, fromId: ctx.fromId, savePayee: ctx.save });
+    const f = ctx.fields;
+    $("doneBody").className = "done ok";
+    $("doneBody").innerHTML = `<div class="vicon">✓</div><div class="h">Payment sent</div><p class="p">${ctx.assess.mode === "check" ? "Verified by Invoice Check" : "Sent instantly"}</p>
+      <div class="review">${[["To", f.business_name || f.account_name], ["BSB / Account", `${fmtBsb(f.bsb)} · ${fmtAcc(f.account_number)}`], ["Amount", money(f.amount_due)], ["Reference", f.reference || "—"], ["From", `${r.from} (balance ${money(r.balance)})`], ["Receipt", r.receipt]].map(([k, v]) => `<div class="rr"><span>${k}</span><b>${esc(v)}</b></div>`).join("")}</div>
+      ${ctx.save ? `<p class="note" style="margin-top:10px">✓ Saved to your businesses</p>` : ""}`;
+    go("done");
+  } catch (e) { toast(e.message); }
+}
+async function report(kind) {
+  try {
+    const r = await postJSON("/api/report", { id: ctx.assess.id, kind });
+    $("doneBody").className = "done rep";
+    $("doneBody").innerHTML = kind === "callback"
+      ? `<div class="vicon">📞</div><div class="h">We'll call you</div><p class="p">A Westpac fraud specialist will call you <b>in the app</b> within 10 minutes. Calls from us show as verified (SafeCall). Never share codes or passwords.</p><div class="review"><div class="rr"><span>Case</span><b>${r.caseId}</b></div><div class="rr"><span>Payment</span><b>Not sent</b></div><div class="rr"><span>Shared with fraud team</span><b>Check results</b></div></div>`
+      : `<div class="vicon">🚩</div><div class="h">Thanks for reporting</div><p class="p">Our fraud team will review this transfer and the receiving account. You don't need to do anything else, and no money has been sent.</p><div class="review"><div class="rr"><span>Case</span><b>${r.caseId}</b></div><div class="rr"><span>Payment</span><b>Not sent</b></div></div>`;
+    go("done");
+  } catch (e) { toast(e.message); }
+}
+$("btnHome").onclick = goHome;
+</script>
+</body>
+</html>

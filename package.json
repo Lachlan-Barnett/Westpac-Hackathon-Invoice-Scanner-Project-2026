@@ -1,7 +1,7 @@
 {
-  "name": "westpac-invoice-check",
-  "version": "1.0.0",
-  "description": "Westpac Hackathon 2026 prototype - AI invoice verification before large transfers",
+  "name": "westpac-invoice-check-v2",
+  "version": "2.0.0",
+  "description": "Westpac Hackathon 2026 prototype - Scam Protect phone app (UI-Version) on the Invoice Check backend",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

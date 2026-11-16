@@ -1,3 +1,41 @@
+# Invoice Checker V2
+
+V2 combines the two versions of the project:
+
+- **Frontend:** the phone banking app from the `UI-Version` branch (`public/index.html` + `public/apis.js`): Scam Protect, the invoice scanner (Upload / Email / Photo), name checks, the Scam Risk Score, the big payment plan, the message checker and scan history.
+- **Backend:** this Invoice Check server: Gemini reads invoices, the 9 checks run against the bank database (`data/bank.sqlite`), and you can use the staff console and settings.
+
+| Page | What it is |
+|---|---|
+| http://localhost:3000 | The phone app (UI-Version design, Invoice Check backend) |
+| http://localhost:3000/classic.html | The original Invoice Check business app |
+| http://localhost:3000/staff.html | Staff console: browse and edit the bank database, API keys |
+
+Run it the same way as before: `npm install` (once), then `npm start` (or double-click `start.bat`).
+
+**How the parts connect**
+- `lib/app-api.js` provides the routes the phone app calls (`/api/health`, `/api/invoice/read`, `/api/invoice/analyze`, `/api/payment/*`, `/api/message/check`, `/api/plan/start`, `/api/intel/report`, `/api/customer/me`, `/api/bpay/:code`). Each one uses the Invoice Check backend:
+  - **Reading an invoice** uses Gemini (`lib/gemini.js`). Without a key, it uses the saved details for the demo invoices.
+  - **Scanning an invoice** happens in two steps, using the Invoice Check app's AI animations:
+    1. **Scan and fill in:** an "AI is reading your invoice" screen with a scan line over the invoice. Then every field is filled in one by one: business, ABN, bank details, amount, reference, invoice number, date, subtotal, GST, total, email and phone.
+    2. **Check:** the customer checks the details and taps **Check this invoice**. `lib/checks.js` then checks them against the internal database, the ABN register and KYC records, one check at a time. The result card shows the trust score and the "✨ INVOICE CHECK" summary. An AI risk review is added when Gemini is on.
+
+    Editing a field after the check re-checks straight away.
+- **Backend panel** (next to the phone; on small screens, tap the **Backend** button):
+  - whether the Gemini key is set, the model, ABN Lookup mode and a **Test Gemini key** button
+  - row counts for each database table, with links to browse it or add a business, bank account, scam report or PayID in the staff console
+  - a live log of every API call the phone app makes. Tap one to see what was sent and received.
+  - **Name check and Scam Risk Score** use the `bank_accounts` and `scam_reports` tables.
+- `lib/app-data.js` adds the phone app's demo data to the same database: Sam Lee, Jordan Smith, Bright Spark Electrical, K Nguyen and the other demo accounts, plus the PayIDs, BPAY billers and Alex Chen's identity (KYC) profile. Rows are only added if they're missing, and *Reset to sample data* adds them back.
+- "Report as scam" in the phone app saves the report and opens a case in the staff console (`fraud_cases`).
+- The phone app keeps its own rule: **inform, never block**. A red result recommends "Don't pay", but the customer can still continue. The classic app still blocks red payments on the server.
+
+**Demo invoices for the phone app:** `public/sample-invoice-genuine.txt` / `-scam.txt` (paste into Email, or drag in), `sample-invoice.png` / `.pdf` (green), `sample-invoice-edited.pdf` (red). The Gold Coast Motors images in `public/samples/` work in the phone app's scanner too.
+
+The UI branch's full feature guide is in `docs/UI-HOW_IT_WORKS.md`. Its server, PDF.js and Tesseract parts aren't used in V2, because Gemini does the reading.
+
+---
+
 # Invoice Check: Westpac Hackathon 2026 prototype
 
 An AI feature inside a Westpac-style banking app. Before a large transfer, the customer scans the invoice. AI reads it, then we verify the ABN, the business register, who really owns the bank account (Confirmation of Payee), payment history, money-mule signals and signs of tampering. The result is 🟢 / 🟡 / 🔴 with a plain-English explanation.

@@ -11,16 +11,28 @@ const db = require("./lib/db");
 const U = require("./lib/util");
 const { runChecks, verdict, templateSummary, caseSummary, logVerification, velocity, threshold, fmtBsb, fmtAcc } = require("./lib/checks");
 const invoiceSeed = require("./data/invoices.json");
+const appApi = require("./lib/app-api");
+const appData = require("./lib/app-data");
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
-app.use(express.json({ limit: "1mb" }));
-app.use(express.static(path.join(__dirname, "public")));
 
 const SAMPLES = path.join(__dirname, "public/samples");
 const hash = b => crypto.createHash("sha1").update(b).digest("hex");
 // Recognise the demo invoice images by content, so demo mode works without an AI key
 const demoByHash = Object.fromEntries(invoiceSeed.map(i => [hash(fs.readFileSync(path.join(SAMPLES, i.file))), i.fields]));
+// ...and the phone app's own sample invoices (public/sample-invoice*.png/pdf)
+const brightSpark = { business_name: "Bright Spark Electrical", abn: "62 301 987 403", email: "", phone: "(02) 4200 1188", website: "", invoice_number: "BSE-2231", invoice_date: "15 Nov 2026",
+  subtotal: 950, gst: 95, total: 1045, deposit: 0, amount_due: 1045, account_name: "Bright Spark Electrical", bsb: "063-010", account_number: "44332211", reference: "BSE-2231",
+  bank_change_notice: false, urgency_language: false, tamper_signs: [] };
+for (const [file, fields] of [["sample-invoice.png", brightSpark], ["sample-invoice.pdf", brightSpark],
+  ["sample-invoice-edited.pdf", { ...brightSpark, bsb: "013-999", account_number: "55551212", tamper_signs: ["The bank details use a different font (Times New Roman) from the rest of the invoice (Arial)"] }]])
+  demoByHash[hash(fs.readFileSync(path.join(__dirname, "public", file)))] = fields;
+
+// The phone banking app (public/index.html + apis.js) talks to these routes; see lib/app-api.js
+app.use("/api", appApi({ demoByHash }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.static(path.join(__dirname, "public")));
 const CUSTOMER = { name: "Coomera Coffee Roasters Pty Ltd", short: "Coomera Coffee Roasters", abn: "45627048281" };
 
 /* ---------- App data ---------- */
@@ -213,7 +225,10 @@ const TABLES = {
   scam_reports: { order: "reported_on DESC", cols: ["type","value","source","reported_on","description"] },
   fraud_cases: { order: "id DESC", cols: [] },
   verifications: { order: "id DESC", cols: [] },
-  customer_accounts: { order: "id", cols: [] }
+  customer_accounts: { order: "id", cols: [] },
+  payids: { order: "holder_name", cols: ["payid","holder_name","payid_type","account_key"] },
+  bpay_billers: { order: "code", cols: ["code","name"] },
+  customer_reports: { order: "id DESC", cols: [] }
 };
 app.get("/api/db/:table", (req, res) => {
   const t = TABLES[req.params.table]; if (!t) return res.status(404).json({ error: "Unknown table" });
@@ -239,11 +254,11 @@ app.delete("/api/db/:table/:rowid", (req, res) => {
   if (!TABLES[req.params.table]) return res.status(404).json({ error: "Unknown table" });
   db.run(`DELETE FROM ${req.params.table} WHERE rowid = ?`, [Number(req.params.rowid)]); db.save(); res.json({ ok: true });
 });
-app.post("/api/db-reset", async (req, res) => { await db.init({ reset: true }); assessments.clear(); res.json({ ok: true }); });
+app.post("/api/db-reset", async (req, res) => { await db.init({ reset: true }); appData.ensure(); assessments.clear(); res.json({ ok: true }); });
 
 const PORT = process.env.PORT || 3000;
-db.init().then(() => app.listen(PORT, () => {
-  console.log(`\n  Invoice Check running at http://localhost:${PORT}`);
+db.init().then(() => appData.ensure()).then(() => app.listen(PORT, () => {
+  console.log(`\n  Invoice Check V2 running at http://localhost:${PORT}  (classic app: /classic.html)`);
   console.log(`  AI (Gemini): ${gemini.enabled() ? "ON (" + gemini.model() + ")" : "OFF - demo mode (add a key at /staff.html#settings)"}`);
   console.log(`  ABN Lookup:  ${abr.enabled() ? "LIVE ABR + bank database" : "bank database (add ABR_GUID for the live register)"}`);
   console.log(`  Large payments: ${U.money(threshold())} and over get the full check`);
