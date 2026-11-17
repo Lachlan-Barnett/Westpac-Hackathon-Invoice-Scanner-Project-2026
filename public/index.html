@@ -1660,7 +1660,7 @@ checkServer();
     try {
       const [st, se] = await Promise.all([fetch('/api/status').then(r => r.json()), fetch('/api/settings').then(r => r.json())]);
       el('dvAi').className = 'pill ' + (st.ai ? 'on' : 'off'); el('dvAi').textContent = st.ai ? 'ON' : 'OFF (demo mode)';
-      el('dvKey').textContent = se.GEMINI_API_KEY ? 'Set in .env: ' + se.GEMINI_API_KEY : 'Not set';
+      el('dvKey').textContent = se.GEMINI_API_KEY ? 'Set on the server: ' + se.GEMINI_API_KEY : 'Not set';
       el('dvModel').textContent = se.GEMINI_MODEL || '-';
       el('dvAbr').textContent = st.abrLive ? 'Live register (ABR GUID set)' : 'Bank database (no ABR GUID)';
       el('dvThr').textContent = '$' + Number(st.threshold).toLocaleString('en-AU');

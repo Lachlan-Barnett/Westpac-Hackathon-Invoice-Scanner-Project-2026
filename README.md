@@ -34,6 +34,25 @@ Run it the same way as before: `npm install` (once), then `npm start` (or double
 
 The UI branch's full feature guide is in `docs/UI-HOW_IT_WORKS.md`. Its server, PDF.js and Tesseract parts aren't used in V2, because Gemini does the reading.
 
+## Put it online (so nobody needs their own Gemini key)
+
+The Gemini key is **never** committed to this repo, because the repo is public and anyone could take the key. Instead, the app runs on a free host with the key stored in the host's settings, and people just open the link.
+
+**Render (free):**
+1. Sign in at https://render.com with GitHub → **New** → **Web Service**.
+2. Choose this repo (or paste its URL under *Public Git repository*) and pick the **`invoice-check`** branch.
+3. Settings: Runtime **Node**, Build command `npm install`, Start command `npm start`, Instance type **Free**.
+4. Under **Environment Variables** add `GEMINI_API_KEY` = your key (and optionally `ABR_GUID`, `GEMINI_MODEL`).
+5. Click **Create Web Service**. After a few minutes you get a link like `https://invoice-checker-v2.onrender.com`. Share that link.
+
+If your Render account can see the repo, **New → Blueprint** uses `render.yaml` and only asks you for the key.
+
+Good to know:
+- The free plan sleeps after 15 minutes without visitors; the first visit after that takes about a minute to wake up. Open the link a minute before a demo.
+- The database resets to the sample data whenever Render restarts the app. Anything added in the staff console is temporary.
+- The key can't be seen or changed from the website: the settings page only shows it masked, and saving settings only works on the computer running the app.
+- Anyone with the link can scan invoices using your Gemini quota. In Google Cloud Console you can restrict the key to the Gemini API and set a daily quota.
+
 ---
 
 # Invoice Check: Westpac Hackathon 2026 prototype
