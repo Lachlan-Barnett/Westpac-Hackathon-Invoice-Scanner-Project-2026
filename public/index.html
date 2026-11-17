@@ -37,6 +37,7 @@
   .dev-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .dev-btns a, .dev-btns button { font-size: .74rem; font-weight: 700; color: var(--ink); background: #fff; border: 1px solid #c9ccd1; border-radius: 8px; padding: 5px 9px; cursor: pointer; text-decoration: none; }
   .dev-btns a:hover, .dev-btns button:hover { border-color: var(--red); color: var(--red); }
+  .dev-row input { width: 112px; font: inherit; padding: 4px 6px; border: 1px solid #c9ccd1; border-radius: 6px; text-align: right; }
   .dev-msg { margin-top: 6px; font-size: .74rem; line-height: 1.4; }
   .dev-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .dev-grid a { display: block; background: #f6f6f8; border-radius: 8px; padding: 7px 9px; color: var(--text); text-decoration: none; }
@@ -68,7 +69,7 @@
   .wmark { width: 26px; height: 26px; border-radius: 6px; background: #fff; color: var(--red); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: .95rem; font-family: Georgia, serif; font-style: italic; }
   .icon-btn { background: none; border: 0; cursor: pointer; padding: 4px; display: flex; color: inherit; }
   .icon-btn svg, .ic svg, .ri-ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .content { flex: 1; overflow-y: auto; padding: 16px; scrollbar-width: none; }
+  .content { flex: 1; overflow-y: auto; padding: 16px 16px 36px; scrollbar-width: none; }
   .content::-webkit-scrollbar { display: none; }
 
   .nav { display: flex; background: #fff; border-top: 1px solid var(--line); flex-shrink: 0; padding-bottom: 6px; }
@@ -265,10 +266,10 @@
   .ic-list { list-style: none; margin: 4px 0 0; padding: 0; }
   .ic-list li { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
   .ic-list li:last-child { border-bottom: 0; }
-  .ic { flex: 0 0 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .8rem; color: #fff; margin-top: 1px; }
-  .ic.wait { background: #eceef0; color: #9a9ea4; }
-  .ic.pend { background: #fff; border: 3px solid #e2e3e6; border-top-color: var(--red); animation: spin .8s linear infinite; }
-  .ic.pass { background: var(--ok); } .ic.warn { background: var(--warn); } .ic.fail { background: var(--bad); } .ic.info { background: #7a8088; }
+  .ic-list .ic { flex: 0 0 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .8rem; color: #fff; margin-top: 1px; }
+  .ic-list .ic.wait { background: #eceef0; color: #9a9ea4; }
+  .ic-list .ic.pend { background: #fff; border: 3px solid #e2e3e6; border-top-color: var(--red); animation: spin .8s linear infinite; }
+  .ic-list .ic.pass { background: var(--ok); } .ic-list .ic.warn { background: var(--warn); } .ic-list .ic.fail { background: var(--bad); } .ic-list .ic.info { background: #7a8088; }
   .ct { font-weight: 700; font-size: .87rem; color: var(--ink); }
   .cd { font-size: .78rem; color: var(--muted); margin-top: 2px; line-height: 1.38; }
   .src { font-size: .68rem; color: #9a9ea4; margin-top: 3px; }
@@ -669,6 +670,12 @@
     <div class="dev-msg" id="dvTest"></div>
   </section>
   <section>
+    <h4>Account balances <small>Alex's accounts · saved in this browser</small></h4>
+    <div id="dvBal"></div>
+    <div class="dev-btns"><button onclick="devSaveBalances()">Save balances</button><button onclick="devResetBalances()">Reset</button></div>
+    <div class="dev-msg" id="dvBalMsg"></div>
+  </section>
+  <section>
     <h4>Database <small>data/bank.sqlite</small></h4>
     <div class="dev-grid" id="dvDb"></div>
     <div class="dev-btns">
@@ -713,6 +720,9 @@ const accounts = [
   { id: 'chq', name: 'Westpac Choice', type: 'Everyday account', bsb: '032-123', acc: '456 789', bal: 4820.55 },
   { id: 'sav', name: 'Westpac Life', type: 'Savings account', bsb: '032-123', acc: '987 654', bal: 15200.00 },
 ];
+const defaultBalances = accounts.map(a => a.bal);
+try { const b = JSON.parse(localStorage.getItem('balances')); if (b) accounts.forEach(a => { if (isFinite(b[a.id])) a.bal = Number(b[a.id]); }); } catch (e) { /* storage blocked */ }
+function saveBalances() { try { localStorage.setItem('balances', JSON.stringify(Object.fromEntries(accounts.map(a => [a.id, a.bal])))); } catch (e) { /* storage blocked */ } }
 let payees = [
   { name: 'Sam Lee', bsb: '062-000', acc: '12345678', times: 14 },
   { name: 'Jordan Smith', bsb: '082-401', acc: '99887766', times: 3 },
@@ -808,6 +818,8 @@ function render() {
       <div class="num">Available</div>
     </div>`).join('');
   $('recentTx').innerHTML = txHtml(txs.slice(0, 5));
+  saveBalances();
+  if (window.devShowBalances) devShowBalances();
 }
 let currentAcct = null;
 function openAccount(id) {
@@ -1160,7 +1172,7 @@ function toggleLock() {
   $('cardState').textContent = cardLocked ? 'Locked' : 'Debit Mastercard';
   toast(cardLocked ? 'Card locked' : 'Card unlocked');
 }
-function resetDemo() { try { localStorage.removeItem('bigPlan'); localStorage.removeItem('scannedInvoices'); } catch (e) { /* storage blocked */ } location.reload(); }
+function resetDemo() { try { localStorage.removeItem('bigPlan'); localStorage.removeItem('scannedInvoices'); localStorage.removeItem('balances'); } catch (e) { /* storage blocked */ } location.reload(); }
 
 // ======================================================= Message checker (runs on the server)
 const msgs = [
@@ -1246,6 +1258,22 @@ let aiOn = false; // set from the server's health check
   });
 })();
 function invFileChosen(input) { const f = input.files[0]; if (f) handleInvoiceFile(f); }
+// Phone photos can be several MB: send a smaller copy (still sharp enough to read) so the upload and the AI are faster.
+// Small files are sent as they are, so the demo invoices are still recognised.
+async function shrinkImage(file, maxSide = 2000) {
+  if (file.size < 1.5 * 1024 * 1024 || !/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+  try {
+    const url = URL.createObjectURL(file);
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    URL.revokeObjectURL(url);
+    const k = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.88));
+    return blob && blob.size < file.size ? blob : file;
+  } catch (e) { return file; }
+}
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -1268,7 +1296,18 @@ async function handleInvoiceFile(file) {
   working(true, 'Finding the business, ABN, bank details and totals…');
   const slow = setTimeout(() => { $('readChip').textContent = '⏳ Still reading… the AI service is slow right now'; }, 15000);
   try {
-    const [r] = await Promise.all([API.readInvoice({ name, type: file.type, data: await fileToBase64(file) }), sleep(1300)]);
+    const up = isPdf ? file : await shrinkImage(file);
+    const body = { name, type: up.type || file.type, data: await fileToBase64(up) };
+    const read = async () => {
+      try { return await API.readInvoice(body); }
+      catch (e) { // Google is sometimes busy for a moment: try once more before asking the customer to type
+        if (!aiOn) throw e;
+        $('readChip').textContent = '✨ Taking another look…';
+        await sleep(800);
+        return API.readInvoice(body);
+      }
+    };
+    const [r] = await Promise.all([read(), sleep(1300)]);
     showInvoice({ source, name, text: r.text, thumb, kind: r.kind, doc: r.doc });
   } catch (e) {
     // Couldn't read it: the customer can type the details and the server still checks them
@@ -1656,6 +1695,24 @@ checkServer();
   const TABLES = [['businesses', 'Businesses (ABN)', 'businesses'], ['accounts', 'Bank accounts (KYC)', 'bank_accounts'], ['reports', 'Scam reports', 'scam_reports'],
     ['cases', 'Fraud cases', 'fraud_cases'], ['invoices', 'Invoices inbox', 'invoices']];
   window.toggleDev = () => el('dev').classList.toggle('open');
+  window.devShowBalances = () => {
+    if (el('dvBal').contains(document.activeElement)) return; // don't overwrite what's being typed
+    el('dvBal').innerHTML = accounts.map(a => `<div class="dev-row"><span>${e(a.name)}</span><input type="number" min="0" step="0.01" id="dvBal_${a.id}" value="${a.bal.toFixed(2)}"></div>`).join('');
+  };
+  window.devSaveBalances = () => {
+    const vals = accounts.map(a => parseFloat(el('dvBal_' + a.id).value));
+    if (vals.some(v => !isFinite(v) || v < 0)) { el('dvBalMsg').innerHTML = '<span style="color:var(--bad)">Enter an amount of $0 or more for each account.</span>'; return; }
+    accounts.forEach((a, i) => { a.bal = Math.round(vals[i] * 100) / 100; });
+    document.activeElement && document.activeElement.blur();
+    render();
+    el('dvBalMsg').innerHTML = '<span style="color:var(--ok)">✓ Saved. The app now shows the new balances.</span>';
+  };
+  window.devResetBalances = () => {
+    accounts.forEach((a, i) => { a.bal = defaultBalances[i]; });
+    document.activeElement && document.activeElement.blur();
+    render();
+    el('dvBalMsg').textContent = 'Balances reset to the demo amounts.';
+  };
   async function refresh() {
     try {
       const [st, se] = await Promise.all([fetch('/api/status').then(r => r.json()), fetch('/api/settings').then(r => r.json())]);
@@ -1690,6 +1747,7 @@ checkServer();
     clearTimeout(timer); timer = setTimeout(refresh, 800); // counts change when checks are logged or scams reported
   });
   refresh();
+  devShowBalances();
 })();
 </script>
 </body>
