@@ -1,4 +1,74 @@
-# Invoice Checker V2
+# Invoice Checker: check the bill before the money moves
+
+**Westpac Innovation & Coding Competition 2026.** Scammers send real-looking invoices with their own bank account swapped in. Invoice Checker scans the invoice with Gemini AI and runs 10 safety checks (ABN register, who really owns the bank account (KYC), scam reports and more) *before* any money moves. The answer is a simple traffic light: 🟢 pay, 🟡 call the business first, 🔴 don't pay.
+
+## 🎬 Watch the video
+
+[![Watch the Invoice Checker video on YouTube](docs/youtube-thumbnail.png)](https://youtu.be/6NL0rz2xUsU)
+
+**https://youtu.be/6NL0rz2xUsU**: Cate's story (one phishing click, one fake invoice) and a live demo of the app.
+
+## 🌐 Try the live app
+
+**https://invoice-checker-v2.onrender.com**
+
+No install and no API key needed: Gemini AI is already connected on the server. It's on a free host that sleeps when nobody's using it, so the first visit can take about a minute to wake up.
+
+## 📱 How to use the app
+
+1. Open the app and tap **Scan invoice** (the red button at the bottom, or the shortcut on the home screen).
+2. **Upload** an invoice image or PDF, take a **photo**, or paste an **email**.
+3. Gemini reads the invoice and fills in the payment for you: business, ABN, BSB, account, amount, GST and contact details. Check they match the invoice.
+4. Tap **Check this invoice**. The checks tick off one by one: the ABN, the business register, GST registration, who owns the bank account (KYC), payment history, money-mule signals, scam reports, signs of editing, the amount and the payment pattern, plus an AI risk review.
+5. Read the result:
+   - 🟢 **Everything checks out**: tap *Pay this invoice*.
+   - 🟡 **Check before you pay**: call the business on a number you find yourself, not the one on the invoice.
+   - 🔴 **This could be a scam**: the app recommends *Don't pay this invoice*. It never blocks you; the choice stays yours.
+6. For large payments to new payees, the app asks three quick scam questions before the payment goes through.
+
+The **Backend** panel next to the phone shows every live API call, the database and whether Gemini is connected.
+
+## 🧪 Test invoices: check it yourself
+
+The [`test-invoices`](test-invoices) folder has **14 ready-made invoices**: genuine bills and scams. Download any of them, upload it with **Scan invoice**, and compare the result with this table. All the businesses are fictional, and every invoice is billed to the demo business Coomera Coffee Roasters.
+
+| File | What it tests | Result in the app |
+|---|---|---|
+| T01_robina_roofing_genuine.png | Genuine supplier, KYC-verified account | 🟢 Green |
+| T02_southport_furniture_small.png | Genuine small payment ($3,850) | 🟢 Green |
+| T03_ormeau_tiling_genuine.png | Genuine, matches the register | 🟢 Green |
+| T04_tweed_landscaping_nsw.png | Genuine interstate (NSW) business | 🟢 Green |
+| T05_helensvale_electrical_sole_trader.png | Sole trader, personal-name account linked to the ABN | 🟢 Green |
+| **T06_robina_roofing_wrong_account.png** | **Cate's fake invoice:** real business, but the bank account belongs to another business | 🔴 Red |
+| T07_labrador_car_rentals_cancelled_abn.png | Cancelled ABN | 🔴 Red |
+| T08_burleigh_conveyancing_settlement_scam.png | $48,500 property-settlement scam: look-alike email, reported mule account, "pay today" | 🔴 Red |
+| T09_ormeau_tiling_gmail_amber.png | Real business, but sent from Gmail with a different phone number | 🟡 Amber |
+| T10_unknown_business_valid_abn.png | Valid ABN, but the business and account are unknown to the bank | 🔴 Red |
+| T11_name_does_not_match_abn.png | Business name doesn't match the ABN | 🔴 Red |
+| T12_invalid_abn_typo.png | ABN wrong by one digit | 🔴 Red |
+| T13_wrong_gst_maths.png | GST doesn't add up | 🔴 Red |
+| T14_robina_roofing_genuine.pdf | Same as T01, as a PDF | 🟢 Green |
+
+**Try Cate's story yourself:** upload **T06** (fake, 🔴), then **T01** (the genuine invoice from the same business, 🟢).
+
+The AI risk review can occasionally add an extra warning, so a result may be one step stricter than the table. More detail on each invoice is in [`test-invoices/EXPECTED-RESULTS.md`](test-invoices/EXPECTED-RESULTS.md).
+
+## 💻 Run it on your own computer
+
+You need [Node.js](https://nodejs.org) 18 or newer.
+
+```bash
+npm install
+npm start
+```
+
+Open http://localhost:3000 (Windows: double-click `start.bat`). To read your own invoices with AI, add a free Gemini key from https://aistudio.google.com/apikey at http://localhost:3000/staff.html#settings, or in a `.env` file (copy `.env.example`). Without a key, only the built-in demo invoices in `public/` are read automatically; for others, type the details in.
+
+---
+
+# Developer notes
+
+## Invoice Checker V2
 
 V2 combines the two versions of the project:
 
