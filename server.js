@@ -13,8 +13,13 @@ const { runChecks, verdict, templateSummary, caseSummary, logVerification, veloc
 const invoiceSeed = require("./data/invoices.json");
 const appApi = require("./lib/app-api");
 const appData = require("./lib/app-data");
+const history = require("./lib/history");
+const inbox = require("./lib/email-inbox");
+const persist = require("./lib/persist");
+const limits = require("./lib/limits");
 
 const app = express();
+app.set("trust proxy", 1); // behind the host's proxy (Render): use the visitor's real IP for the usage limits
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const SAMPLES = path.join(__dirname, "public/samples");
@@ -28,6 +33,11 @@ const brightSpark = { business_name: "Bright Spark Electrical", abn: "62 301 987
 for (const [file, fields] of [["sample-invoice.png", brightSpark], ["sample-invoice.pdf", brightSpark],
   ["sample-invoice-edited.pdf", { ...brightSpark, bsb: "013-999", account_number: "55551212", tamper_signs: ["The bank details use a different font (Times New Roman) from the rest of the invoice (Arial)"] }]])
   demoByHash[hash(fs.readFileSync(path.join(__dirname, "public", file)))] = fields;
+// ...and the test invoices in test-invoices/ (data/test-invoices.json is what Gemini read from each one),
+// so they work without a key, and still work when Gemini is busy
+const TESTS = path.join(__dirname, "test-invoices");
+for (const [file, fields] of Object.entries(require("./data/test-invoices.json")))
+  if (fs.existsSync(path.join(TESTS, file))) demoByHash[hash(fs.readFileSync(path.join(TESTS, file)))] = fields;
 
 // The phone banking app (public/index.html + apis.js) talks to these routes; see lib/app-api.js
 app.use("/api", appApi({ demoByHash }));
@@ -39,7 +49,8 @@ const CUSTOMER = { name: "Coomera Coffee Roasters Pty Ltd", short: "Coomera Coff
 app.get("/api/status", (req, res) => {
   const n = t => db.get(`SELECT COUNT(*) AS n FROM ${t}`).n;
   res.json({ ai: gemini.enabled(), model: gemini.enabled() ? gemini.model() : null, abrLive: abr.enabled(), threshold: threshold(),
-    db: { businesses: n("businesses"), accounts: n("bank_accounts"), reports: n("scam_reports"), invoices: n("invoices"), cases: n("fraud_cases") } });
+    db: { businesses: n("businesses"), accounts: n("bank_accounts"), reports: n("scam_reports"), invoices: n("invoices"), cases: n("fraud_cases"), payments: n("transfers"), emails: n("email_checks") },
+    limits: limits.status(), backup: persist.status(), email: inbox.status() });
 });
 
 app.get("/api/home", (req, res) => {
@@ -183,7 +194,7 @@ app.post("/api/report", (req, res) => {
 });
 
 /* ---------- Diagnostic ---------- */
-app.get("/api/test-ai", async (req, res) => {
+app.get("/api/test-ai", limits.perVisitor("test"), async (req, res) => {
   if (!gemini.enabled()) return res.json({ ok: false, problem: "No GEMINI_API_KEY. Add it at /staff.html#settings" });
   try { const r = await gemini.extractInvoice(fs.readFileSync(path.join(SAMPLES, "invoice_genuine.png")), "image/png", true); res.json({ ok: true, model: r.model, extracted: r.fields, rawReply: r.raw }); }
   catch (e) { res.json({ ok: false, model: gemini.model(), error: e.message }); }
@@ -225,6 +236,8 @@ const TABLES = {
   scam_reports: { order: "reported_on DESC", cols: ["type","value","source","reported_on","description"] },
   fraud_cases: { order: "id DESC", cols: [] },
   verifications: { order: "id DESC", cols: [] },
+  callbacks: { order: "id DESC", cols: [] },
+  email_checks: { order: "id DESC", cols: [] },
   customer_accounts: { order: "id", cols: [] },
   payids: { order: "holder_name", cols: ["payid","holder_name","payid_type","account_key"] },
   bpay_billers: { order: "code", cols: ["code","name"] },
@@ -254,13 +267,19 @@ app.delete("/api/db/:table/:rowid", (req, res) => {
   if (!TABLES[req.params.table]) return res.status(404).json({ error: "Unknown table" });
   db.run(`DELETE FROM ${req.params.table} WHERE rowid = ?`, [Number(req.params.rowid)]); db.save(); res.json({ ok: true });
 });
-app.post("/api/db-reset", async (req, res) => { await db.init({ reset: true }); appData.ensure(); assessments.clear(); res.json({ ok: true }); });
+app.post("/api/db-reset", async (req, res) => { await db.init({ reset: true }); setupData(); assessments.clear(); res.json({ ok: true }); });
+// Tables and demo rows added on top of the sample database (only if missing)
+function setupData() { appData.ensure(); history.ensure(); inbox.ensure(); db.save(); }
 
 const PORT = process.env.PORT || 3000;
-db.init().then(() => appData.ensure()).then(() => app.listen(PORT, () => {
+db.init().then(setupData).then(() => app.listen(PORT, () => {
   console.log(`\n  Invoice Check V2 running at http://localhost:${PORT}  (classic app: /classic.html)`);
   console.log(`  AI (Gemini): ${gemini.enabled() ? "ON (" + gemini.model() + ")" : "OFF - demo mode (add a key at /staff.html#settings)"}`);
   console.log(`  ABN Lookup:  ${abr.enabled() ? "LIVE ABR + bank database" : "bank database (add ABR_GUID for the live register)"}`);
   console.log(`  Large payments: ${U.money(threshold())} and over get the full check`);
+  console.log(`  Database: ${persist.enabled() ? "backed up to Upstash (kept when the host restarts)" : "data/bank.sqlite only (add UPSTASH_REDIS_REST_URL/TOKEN to keep it on free hosts)"}`);
   console.log(`  Staff console: http://localhost:${PORT}/staff.html\n`);
+  inbox.start();
 }));
+// The host stops the app with SIGTERM before a restart: upload the last database changes first
+process.on("SIGTERM", () => persist.flush().finally(() => process.exit(0)));

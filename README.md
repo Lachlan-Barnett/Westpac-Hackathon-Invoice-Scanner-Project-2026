@@ -1,6 +1,6 @@
 # Invoice Checker: check the bill before the money moves
 
-**Westpac Innovation & Coding Competition 2026.** Scammers send real-looking invoices with their own bank account swapped in. Invoice Checker scans the invoice with Gemini AI and runs 10 safety checks (ABN register, who really owns the bank account (KYC), scam reports and more) *before* any money moves. The answer is a simple traffic light: 🟢 pay, 🟡 call the business first, 🔴 don't pay.
+**Westpac Innovation & Coding Competition 2026.** Scammers send real-looking invoices with their own bank account swapped in. Invoice Checker scans the invoice with Gemini AI and runs its safety checks (ABN register, who really owns the bank account (KYC), scam reports, PDF editing, QR codes, payment history and more) *before* any money moves. The answer is a simple traffic light: 🟢 pay, 🟡 call the business first, 🔴 don't pay.
 
 ## 🎬 Watch the video
 
@@ -19,18 +19,31 @@ No install and no API key needed: Gemini AI is already connected on the server. 
 1. Open the app and tap **Scan invoice** (the red button at the bottom, or the shortcut on the home screen).
 2. **Upload** an invoice image or PDF, take a **photo**, or paste an **email**.
 3. Gemini reads the invoice and fills in the payment for you: business, ABN, BSB, account, amount, GST and contact details. Check they match the invoice.
-4. Tap **Check this invoice**. The checks tick off one by one: the ABN, the business register, GST registration, who owns the bank account (KYC), payment history, money-mule signals, scam reports, signs of editing, the amount and the payment pattern, plus an AI risk review.
+4. Tap **Check this invoice**. The checks tick off one by one: the ABN, the business register, GST registration, who owns the bank account (KYC), the PayID and QR code, payment history, money-mule signals, scam reports, signs of editing (including inside the PDF file), duplicates, how this invoice compares with the supplier's past ones, the amount and the payment pattern, plus an AI risk review.
 5. Read the result:
    - 🟢 **Everything checks out**: tap *Pay this invoice*.
-   - 🟡 **Check before you pay**: call the business on a number you find yourself, not the one on the invoice.
+   - 🟡 **Check before you pay**: the app shows the business's number from the business register (never the one on the invoice). Call them, then tap *They confirmed it* (turns 🟢) or *They didn't send it* (opens a fraud case).
    - 🔴 **This could be a scam**: the app recommends *Don't pay this invoice*. It never blocks you; the choice stays yours.
 6. For large payments to new payees, the app asks three quick scam questions before the payment goes through.
 
-The **Backend** panel next to the phone shows every live API call, the database and whether Gemini is connected.
+The **Backend** panel next to the phone shows every live API call, the database, whether Gemini is connected, today's AI usage, and lets you change Alex's account balances.
+
+## ✨ What else it does
+
+| Feature | What happens |
+|---|---|
+| 📄 **Edited-PDF detection** | Looks inside the PDF file itself (no AI): which program made it, whether it was later saved in a PDF editor, and when it was changed. Catches invoices edited to swap the bank details (try **T15**). |
+| 🔳 **QR codes and PayID** | Reads QR codes on invoices and checks who the PayID really belongs to. Flags a QR code that pays somewhere other than the printed details (try **T17**). Invoices with only a PayID can be paid by PayID (try **T16**). |
+| 🔁 **Duplicate invoices** | Paid invoices are remembered. Scanning one again warns *"You've already paid this invoice"*. |
+| 📈 **Supplier history** | Compares the invoice with what you've paid this supplier before: unusually big amounts, more invoices than usual, or new bank details. |
+| 📞 **Call the business** | For 🟡 and 🔴 results: their registered phone number, plus buttons to record what they said. |
+| 📧 **Forward by email** | Once an inbox is set up (see *Optional services* below), forward an invoice email to the app's Gmail address. It's checked automatically, you get the result by email, and it appears under **Scan → Forwarded by email**. |
+| 🛡️ **Usage limits** | Each visitor can scan 30 invoices an hour, and the app makes at most 500 AI calls a day, so a public link can't use up the Gemini quota. |
+| 💾 **Database that survives restarts** | With a free Upstash database connected, everything added in the staff console and every payment is kept when Render restarts the app. |
 
 ## 🧪 Test invoices: check it yourself
 
-The [`test-invoices`](test-invoices) folder has **14 ready-made invoices**: genuine bills and scams. Download any of them, upload it with **Scan invoice**, and compare the result with this table. All the businesses are fictional, and every invoice is billed to the demo business Coomera Coffee Roasters.
+The [`test-invoices`](test-invoices) folder has **17 ready-made invoices**: genuine bills and scams. Download any of them, upload it with **Scan invoice**, and compare the result with this table. All the businesses are fictional, and every invoice is billed to the demo business Coomera Coffee Roasters.
 
 | File | What it tests | Result in the app |
 |---|---|---|
@@ -48,10 +61,26 @@ The [`test-invoices`](test-invoices) folder has **14 ready-made invoices**: genu
 | T12_invalid_abn_typo.png | ABN wrong by one digit | 🔴 Red |
 | T13_wrong_gst_maths.png | GST doesn't add up | 🔴 Red |
 | T14_robina_roofing_genuine.pdf | Same as T01, as a PDF | 🟢 Green |
+| T15_robina_roofing_edited_pdf.pdf | Real invoice edited in a PDF editor to change the bank details | 🔴 Red |
+| T16_ormeau_tiling_payid_qr.png | Genuine invoice paid by PayID, with a matching QR code | 🟢 Green |
+| T17_robina_roofing_qr_swapped.png | Genuine details, but the QR code pays a scammer's PayID | 🔴 Red |
 
 **Try Cate's story yourself:** upload **T06** (fake, 🔴), then **T01** (the genuine invoice from the same business, 🟢).
 
+The test invoices also work without a Gemini key, and when Gemini is busy: what the AI read from each one is saved in `data/test-invoices.json`. After you pay one, scanning it again warns that it's already paid; *Reset to sample data* in the staff console starts fresh.
+
 The AI risk review can occasionally add an extra warning, so a result may be one step stricter than the table. More detail on each invoice is in [`test-invoices/EXPECTED-RESULTS.md`](test-invoices/EXPECTED-RESULTS.md).
+
+## ⚙️ Optional services (set on Render under Environment, or in `.env`)
+
+| Setting | What it's for | How to get it |
+|---|---|---|
+| `GEMINI_DAILY_LIMIT`, `SCANS_PER_HOUR` | Usage limits (default 500 AI calls a day, 30 scans per visitor an hour) | Just set the numbers |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Keep the database when Render restarts the app | Free at https://upstash.com → *Create database* → copy the two **REST** values |
+| `EMAIL_USER`, `EMAIL_APP_PASSWORD` | The Gmail inbox people forward invoices to | Make a new Gmail account for the app, turn on 2-Step Verification, then create an app password at https://myaccount.google.com/apppasswords |
+| `BREVO_API_KEY` | Sends the reply emails. Render's free plan blocks normal email sending (SMTP), so replies go through Brevo's API | Free at https://www.brevo.com → *SMTP & API* → *API keys*. Add the Gmail address as a verified sender |
+
+All of these are optional: without them the app works as before. The Backend panel shows which ones are on.
 
 ## 💻 Run it on your own computer
 
@@ -237,6 +266,14 @@ public/staff.html   Staff console to browse/edit the database
 data/samples.json   Demo invoice extractions (used when no AI key)
 public/index.html   The mobile banking app UI
 public/samples/     Demo invoice images
+lib/app-api.js      The phone app's API (/api/invoice/*, /api/payment/*, /api/email/*)
+lib/pdf-check.js    Edited-PDF detection (editor program, dates, extra saves)
+lib/payment-codes.js QR code reading + PayID and QR checks
+lib/history.js      Payment history: duplicates, supplier history, "call the business" results
+lib/email-inbox.js  Forward-by-email: Gmail inbox, checks, replies
+lib/limits.js       Usage limits (per visitor and per day)
+lib/persist.js      Database backup to Upstash (survives restarts)
+data/test-invoices.json  What Gemini read from each test invoice (works without a key)
 ```
 
 ## Deploying online (optional)

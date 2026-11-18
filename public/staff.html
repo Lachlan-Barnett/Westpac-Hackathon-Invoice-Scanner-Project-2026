@@ -59,6 +59,8 @@ const T = {
   payids: { title: "PayIDs", add: "Add a PayID", fields: [["payid","PayID * (phone, email or ABN, no spaces)"],["holder_name","Registered name *"],["payid_type","Type",["personal","business"]],["account_key","Account (BSB + account digits)"]] },
   bpay_billers: { title: "BPAY billers", add: "Add a BPAY biller", fields: [["code","Biller code *"],["name","Biller name *"]] },
   customer_reports: { title: "App scam reports", fields: [] },
+  callbacks: { title: "Calls to businesses", fields: [] },
+  email_checks: { title: "Emailed invoices", fields: [] },
   settings: { title: "⚙️ API keys" }
 };
 let cur = "businesses", rows = [];

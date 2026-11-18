@@ -285,6 +285,12 @@
   .vcard .sc { font-size: .78rem; color: var(--muted); margin-top: 6px; }
   .bubble { background: #efeafb; border-radius: 16px; padding: 13px 15px; font-size: .87rem; line-height: 1.42; margin-bottom: 12px; color: var(--text); }
   input.filled { animation: fillflash .9s ease; }
+  .call-card p { margin: 6px 0 10px; line-height: 1.4; }
+  .call-card .btn { margin: 0; }
+  .call-card a.btn { display: block; text-align: center; text-decoration: none; box-sizing: border-box; }
+  .call-card .two { gap: 8px; }
+  .em-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-right: 10px; background: #c9ccd1; }
+  .em-dot.ok { background: var(--ok); } .em-dot.warn { background: var(--warn); } .em-dot.bad { background: var(--bad); }
   @keyframes fillflash { from { background: #e3dbfa; } to { background: #fff; } }
   .bubble b { color: #4b2ca0; display: block; font-size: .7rem; margin-bottom: 3px; letter-spacing: .03em; }
 
@@ -501,6 +507,10 @@
         </div>
         <input type="file" id="invFile" accept="image/*,application/pdf,.pdf,.eml,.txt,message/rfc822" hidden onchange="invFileChosen(this)">
         <input type="file" id="invCam" accept="image/*" capture="environment" hidden onchange="invFileChosen(this)">
+        <div id="emailWrap" style="display:none">
+          <div class="section-title">Forwarded by email</div>
+          <div class="card" style="padding:12px 16px"><div class="muted small" id="emailHow" style="line-height:1.4"></div><div id="emailList"></div></div>
+        </div>
         <div id="recentScansWrap" style="display:none">
           <div class="section-title">Previously scanned <span class="see-all" onclick="go('scans')">See all</span></div>
           <div class="card" style="padding:4px 16px" id="recentScans"></div>
@@ -668,6 +678,13 @@
     <div class="dev-row"><span>Full check from</span><span id="dvThr">…</span></div>
     <div class="dev-btns"><button onclick="devTestAi()">Test Gemini key</button><a href="/staff.html#settings" target="_blank">Add or change keys</a></div>
     <div class="dev-msg" id="dvTest"></div>
+  </section>
+  <section>
+    <h4>Protection and services</h4>
+    <div class="dev-row"><span>AI calls today</span><span id="dvAiUse">…</span></div>
+    <div class="dev-row"><span>Scans per visitor</span><span id="dvScanLim">…</span></div>
+    <div class="dev-row"><span>Database backup</span><span id="dvBackup">…</span></div>
+    <div class="dev-row"><span>Email inbox</span><span id="dvEmail" style="text-align:right">…</span></div>
   </section>
   <section>
     <h4>Account balances <small>Alex's accounts · saved in this browser</small></h4>
@@ -962,7 +979,8 @@ async function review() {
   if (!(amt > 0)) return err('Enter an amount.');
   if (amt > from.bal) return err(`Not enough money in ${from.name}.`);
   err('');
-  const invoice = invoiceCtx && invoiceCtx.key === to.key ? invoiceCtx : null;
+  // the scanned invoice this payment is for (paid to its bank account, or to its PayID)
+  const invoice = invoiceCtx && (invoiceCtx.key === to.key || (invoiceCtx.payid && normId(invoiceCtx.payid) === to.key)) ? invoiceCtx : null;
   const saved = findPayee(to);
   const isBusiness = $('pBiz').checked || !!invoice || !!(saved && saved.business);
   const btn = $('reviewBtn'); btn.disabled = true; btn.textContent = 'Checking…';
@@ -1127,6 +1145,8 @@ function complete() {
       invoiceHistory[p.invoice.abn] = { bsb: p.to.bsb, acc: p.to.acc, last: 'today', font: p.invoice.mainFont || old.font, domain: p.invoice.emailDomain || old.domain };
     }
     if (p.invoice && p.invoice.scanId) setScanStatus(p.invoice.scanId, 'Paid', p.amt);
+    if (p.invoice) API.invoicePaid({ business: p.invoice.business || p.to.name, abn: p.invoice.abn, bsb: p.to.bsb || p.invoice.bsb, account: p.to.acc || p.invoice.account,
+      amount: p.amt, reference: p.desc, invoiceNumber: p.invoice.invoiceNumber, level: p.invoice.level }).catch(() => { /* history is a nice-to-have */ });
     lastPaid = { key: p.to.key, name: p.to.name };
     extra = `<div class="review-row"><span>Scam risk check</span><span>${p.risk.score}/100</span></div>`;
   }
@@ -1237,6 +1257,23 @@ function invReset() {
   $('invText').value = ''; $('invFile').value = ''; $('invCam').value = '';
   setInvMode('upload');
   renderRecentScans();
+  renderEmailChecks();
+}
+// Invoices forwarded to the app's email address (checked on the server, see lib/email-inbox.js)
+async function renderEmailChecks() {
+  let r; try { r = await API.emailChecks(); } catch (e) { return; }
+  if (!$('emailWrap') || (!r.status.enabled && !r.items.length)) return;
+  $('emailWrap').style.display = '';
+  $('emailHow').innerHTML = r.status.enabled ? `Forward any invoice email to <b>${esc(r.status.address)}</b>. We'll check it and email you the result.` : 'Invoices that were forwarded by email:';
+  const when = t => new Date(t).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  $('emailList').innerHTML = r.items.slice(0, 5).map(i => `<div class="row-item" onclick="openEmailCheck(${i.id})"><span class="em-dot ${esc(i.level)}"></span>
+    <div class="info"><b>${esc(i.business || i.subject)}</b><div class="muted small">${i.amount ? money(i.amount) + ' · ' : ''}${when(i.received_at)} · from ${esc(i.sender)}</div></div><span class="chev">›</span></div>`).join('')
+    || '<div class="muted small" style="margin-top:8px">Nothing forwarded yet.</div>';
+}
+async function openEmailCheck(id) {
+  let e; try { e = await API.emailCheck(id); } catch (x) { return apiError(x); }
+  if (!e.doc && !e.body) return toast(e.summary || 'No invoice was found in that email.');
+  showInvoice({ source: 'Forwarded email', name: e.subject, text: e.body || '', thumb: null, kind: e.doc ? (e.doc.kind || 'PDF') : 'EMAIL', doc: e.doc });
 }
 function working(on, msg) { $('invInput').style.display = on ? 'none' : ''; $('invWorking').style.display = on ? '' : 'none'; $('invProgress').textContent = msg || ''; }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1319,7 +1356,7 @@ function invFromText() {
   showInvoice({ source: /^\s*from:/im.test(t) ? 'Shared email' : 'Pasted text', name: '', text: t, thumb: null, kind: 'EMAIL', doc: null });
 }
 
-const FIELD_IDS = { business: 'iBiz', abn: 'iAbn', accountName: 'iName', bsb: 'iBsb', account: 'iAcc', amount: 'iAmt', reference: 'iRef',
+const FIELD_IDS = { business: 'iBiz', abn: 'iAbn', accountName: 'iName', bsb: 'iBsb', account: 'iAcc', payid: 'iPayid', amount: 'iAmt', reference: 'iRef',
   invoiceNumber: 'iInv', date: 'iDate', subtotal: 'iSub', gst: 'iGst', total: 'iTot', email: 'iEmail', phone: 'iPhone' };
 function readFields() { const f = {}; Object.keys(FIELD_IDS).forEach(k => { f[k] = $(FIELD_IDS[k]).value; }); return f; }
 function fillFields(f) { Object.keys(FIELD_IDS).forEach(k => { $(FIELD_IDS[k]).value = f && f[k] != null ? f[k] : ''; }); }
@@ -1351,11 +1388,13 @@ function showInvoice(src, scanId, presetFields) {
         <div class="muted small" style="margin-top:2px;word-break:break-all" id="invFrom"></div></div>
       <button class="btn ghost sm" style="width:auto;margin:0;padding:6px 12px" onclick="invReset()">Scan another</button></div>
     ${src.failed ? '<div class="note warn" style="margin:0 0 12px">We couldn\'t read this invoice automatically. Type the details below and we\'ll still check them for you.</div>' : read}
+    ${src.doc && src.doc.qr ? '<div class="note info" style="margin:0 0 12px">🔳 <b>This invoice has a QR code.</b> We\'ll check where it would send your money.</div>' : ''}
     <div class="card"><b>Payment details</b><div class="muted small" id="invFillNote">Filling in the details from your invoice…</div>
       ${f('iBiz', 'Business name')}
       ${f('iAbn', 'ABN (or overseas business number)')}
       ${f('iName', 'Bank account name')}
       <div class="two"><div>${f('iBsb', 'BSB', 'maxlength="7" inputmode="numeric"')}</div><div>${f('iAcc', 'Account number', 'maxlength="9" inputmode="numeric"')}</div></div>
+      ${f('iPayid', 'PayID (if the invoice shows one)')}
       <div class="two"><div>${f('iAmt', 'Amount to pay', 'inputmode="decimal"')}</div><div>${f('iRef', 'Reference', 'maxlength="18"')}</div></div>
       <div class="chk-head" style="padding-top:16px">From the invoice</div>
       <div class="two"><div>${f('iInv', 'Invoice number')}</div><div>${f('iDate', 'Invoice date')}</div></div>
@@ -1433,6 +1472,27 @@ async function runInvoiceCheck(animate) {
   $('invResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
   await recheckInvoice(animate, true);
 }
+// "Call the business": their number from the business register (never the invoice), then what they said
+function callCard(res) {
+  const c = res.check, biz = esc(c.business || 'the business');
+  if (c.callback === 'confirmed') return `<div class="note ok" style="margin:0 0 12px">📞 You confirmed this invoice with ${biz} by phone.</div>`;
+  if (c.callback === 'denied') return `<div class="note bad" style="margin:0 0 12px">📞 ${biz} told you they didn't send this invoice. We've passed it to our fraud team. Don't pay it.</div>`;
+  if (res.level === 'ok') return '';
+  return `<div class="card call-card"><b>📞 Call ${biz} before you pay</b>
+    <p class="muted small">${c.phone ? 'This is their number from the business register, not the one on the invoice.' : 'Find their number on their official website or an old invoice you trust, not on this one.'} Ask them to confirm the invoice number, the amount and the bank details.</p>
+    ${c.phone ? `<a class="btn ghost" href="tel:${digits(c.phone)}">Call ${esc(c.phone)}</a>` : ''}
+    <div class="muted small" style="margin:12px 0 6px">What did they say?</div>
+    <div class="two">${res.level === 'warn' ? '<div><button class="btn sm" onclick="invCallback(\'confirmed\')">They confirmed it</button></div>' : ''}<div><button class="btn ghost sm" onclick="invCallback('denied')">They didn't send it</button></div></div></div>`;
+}
+async function invCallback(outcome) {
+  const c = currentInv && currentInv.check; if (!c) return;
+  try {
+    const r = await API.invoiceCallback({ outcome, abn: c.abn, business: c.business, phone: c.phone, bsb: c.bsb, account: c.account, invoiceNumber: c.invoiceNumber, amount: c.amount });
+    if (outcome === 'denied') { setScanStatus(currentInv.scanId, 'Not paid'); toast(`Thank you. We've opened case ${r.caseId} and flagged the account.`); }
+    else toast('Thanks. The business confirmed it.');
+    await recheckInvoice(false, false);
+  } catch (e) { apiError(e); }
+}
 async function recheckInvoice(animate, first) {
   if (!currentInv || !$('iBiz') || !currentInv.fieldsReady) return;
   const t = ++invToken;
@@ -1449,9 +1509,9 @@ async function recheckInvoice(animate, first) {
   $('invChecks').innerHTML = res.checks.map(checkRow).join('');
   showVerdict(res);
   if (animate) $('invResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  $('invActions').innerHTML = res.level === 'bad'
+  $('invActions').innerHTML = callCard(res) + (res.level === 'bad'
     ? `<button class="btn" onclick="setScanStatus(currentInv.scanId, 'Not paid');toast('Good call. Nothing was paid.');goHome()">Don't pay this invoice</button><button class="btn ghost" onclick="payInvoice()">Continue to payment</button>`
-    : '<button class="btn" onclick="payInvoice()">Pay this invoice</button>';
+    : '<button class="btn" onclick="payInvoice()">Pay this invoice</button>');
   currentInv.check = res.check;
   saveScanRecord();
   currentInv.check.scanId = currentInv.scanId;
@@ -1459,8 +1519,9 @@ async function recheckInvoice(animate, first) {
 }
 
 async function payInvoice() {
-  const name = $('iName').value.trim(), bsb = $('iBsb').value, acc = digits($('iAcc').value);
-  if (!name || digits(bsb).length !== 6 || acc.length < 6) { toast('Enter the bank account name, BSB and account number'); return; }
+  const name = $('iName').value.trim(), bsb = $('iBsb').value, acc = digits($('iAcc').value), payid = $('iPayid').value.trim();
+  const byAccount = name && digits(bsb).length === 6 && acc.length >= 6;
+  if (!byAccount && !payid) { toast('Enter the bank account name, BSB and account number, or a PayID'); return; }
   clearTimeout(invTimer);
   await recheckInvoice(false, false);
   if (!currentInv || !currentInv.check) return;
@@ -1468,7 +1529,8 @@ async function payInvoice() {
   invoiceCtx = currentInv.check;
   setScanStatus(currentInv.scanId, 'Payment started');
   startPay(true);
-  $('pName').value = name; $('pBsb').value = fmtBsbStr(bsb); $('pAcc').value = acc;
+  if (byAccount) { $('pName').value = name; $('pBsb').value = fmtBsbStr(bsb); $('pAcc').value = acc; }
+  else { setMethod('payid'); $('pPayid').value = payid; }
   $('pAmt').value = amt; $('pDesc').value = ref.slice(0, 18); $('pBiz').checked = true;
   syncPick(); scheduleLive();
 }
@@ -1686,6 +1748,7 @@ updateClock(); setInterval(updateClock, 30000);
 setInterval(updatePlanCard, 60000);
 render(); fillAcctSelects(); renderPlan(); updatePlanCard();
 checkServer();
+if (location.hash === '#emails') goTab('invoice');
 </script>
 <script>
 // ======================================================= Backend panel (next to the phone): APIs, database, API call log
@@ -1693,7 +1756,7 @@ checkServer();
   const el = id => document.getElementById(id);
   const e = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const TABLES = [['businesses', 'Businesses (ABN)', 'businesses'], ['accounts', 'Bank accounts (KYC)', 'bank_accounts'], ['reports', 'Scam reports', 'scam_reports'],
-    ['cases', 'Fraud cases', 'fraud_cases'], ['invoices', 'Invoices inbox', 'invoices']];
+    ['cases', 'Fraud cases', 'fraud_cases'], ['payments', 'Payments (history)', 'transfers'], ['emails', 'Emailed invoices', 'email_checks']];
   window.toggleDev = () => el('dev').classList.toggle('open');
   window.devShowBalances = () => {
     if (el('dvBal').contains(document.activeElement)) return; // don't overwrite what's being typed
@@ -1721,6 +1784,12 @@ checkServer();
       el('dvModel').textContent = se.GEMINI_MODEL || '-';
       el('dvAbr').textContent = st.abrLive ? 'Live register (ABR GUID set)' : 'Bank database (no ABR GUID)';
       el('dvThr').textContent = '$' + Number(st.threshold).toLocaleString('en-AU');
+      el('dvAiUse').textContent = `${st.limits.aiToday} of ${st.limits.aiDailyLimit}`;
+      el('dvScanLim').textContent = `${st.limits.scansPerHour} an hour`;
+      const b = st.backup;
+      el('dvBackup').innerHTML = b.enabled ? (b.error ? `<span style="color:var(--bad)">Error: ${e(b.error)}</span>` : `<span class="pill on">Upstash</span>${b.last ? ' ' + new Date(b.last).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }) : ''}`) : 'Local file only';
+      const m = st.email;
+      el('dvEmail').innerHTML = m.enabled ? `<code>${e(m.address)}</code>${m.lastError ? `<br><span style="color:var(--bad)">${e(m.lastError)}</span>` : `<br>${m.processed} checked · ${m.replies} replies`}` : 'Not set up';
       el('dvDb').innerHTML = TABLES.map(([k, label, t]) => `<a href="/staff.html#${t}" target="_blank"><b>${e(st.db[k])}</b>${e(label)}</a>`).join('');
     } catch (x) { el('dvAi').className = 'pill off'; el('dvAi').textContent = 'Server not running'; }
   }
